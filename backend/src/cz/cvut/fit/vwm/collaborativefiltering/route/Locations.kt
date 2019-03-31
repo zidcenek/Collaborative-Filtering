@@ -10,3 +10,7 @@ class UsersLoc
 @KtorExperimentalLocationsAPI
 @Location("/songs")
 class SongsLoc
+
+@KtorExperimentalLocationsAPI
+@Location("/reviews")
+class ReviewsLoc

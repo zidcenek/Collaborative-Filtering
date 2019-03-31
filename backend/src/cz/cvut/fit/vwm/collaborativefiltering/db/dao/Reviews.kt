@@ -6,6 +6,6 @@ object Reviews : TableDefinition() {
     val id = integer("id").autoIncrement().primaryKey()
     val userId = integer("user_id").index()
     val songId = integer("song_id")
-    val value = integer("value").nullable()
+    val value = integer("value")
     val rank = integer("rank").nullable()
 }

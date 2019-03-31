@@ -1,5 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering.data.json;
 
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review;
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song;
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +18,7 @@ import java.util.Scanner;
 public class MockDataJsonParser {
 
     @NotNull
-    private static String getFileContent(String fileName) {
+    public static String getFileContent(String fileName) {
         StringBuilder result = new StringBuilder();
         ClassLoader classLoader = MockDataJsonParser.class.getClassLoader();
         try {
@@ -68,6 +69,27 @@ public class MockDataJsonParser {
                 String email = user.getString("email");
                 String password = user.getString("password");
                 users.add(new User(0, name, surname, email, password));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    @NotNull
+    public static List<Review> praseReview(String filename) {
+        String jsonTxt = getFileContent(filename);
+        List<Review> users = new ArrayList<>();
+
+        try {
+            JSONArray ja = new JSONArray(jsonTxt);
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject user = (JSONObject) ja.get(i);
+                int userId = user.getInt("user_id");
+                int songId = user.getInt("song_id");
+                int value = user.getInt("value");
+                int rank = user.getInt("rank");
+                users.add(new Review(0, userId, songId, value, rank));
             }
         } catch (JSONException e) {
             e.printStackTrace();

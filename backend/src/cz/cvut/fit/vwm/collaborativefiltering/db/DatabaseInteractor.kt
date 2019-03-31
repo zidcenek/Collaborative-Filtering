@@ -1,5 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
@@ -76,5 +77,26 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
     }
 
     override fun close() {
+    }
+
+    override fun createReview(review: Review): Int = db.transaction {
+        insertInto(Reviews).values {
+            it[userId] = review.userId
+            it[songId] = review.songId
+            it[value] = review.value
+            it[rank] = review.rank
+        }.fetch(Reviews.id).execute()
+    }
+
+    override fun getReviews(): List<Review> = db.transaction {
+        from(Reviews)
+                .select(Reviews)
+                .execute()
+                .map { row -> Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value], row[Reviews.rank]) }
+                .toList()
+    }
+
+    override fun getReviewsCount(): Int = db.transaction {
+        from(Reviews).select(Reviews.id.count()).execute().single()[0]
     }
 }

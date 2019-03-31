@@ -4,6 +4,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import io.ktor.util.hex
 import java.net.URL
+import java.net.UnknownHostException
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -18,10 +19,20 @@ fun hash(password: String): String {
 
 fun fillDbWithMockData(storage: DatabaseInteractor) {
     if (storage.getSongsCount() == 0) {
-        val url = "https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=rj&api_key=$LAST_FM_API_KEY&format=json&limit=100"
-        MockDataJsonParser.parseSongs(URL(url).readText()).forEach { storage.createSong(it) }
+        try {
+            val url = "https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=rj&api_key=$LAST_FM_API_KEY&format=json&limit=100"
+            MockDataJsonParser.parseSongs(URL(url).readText()).forEach { storage.createSong(it) }
+        } catch (e: UnknownHostException) {
+            MockDataJsonParser.parseSongs(MockDataJsonParser.getFileContent("mock/songs.json")).forEach { storage.createSong(it) }
+        }
     }
     if (storage.getUsersCount() == 0) {
-        MockDataJsonParser.parseUsers("users.json").forEach { storage.createUser(it) }
+        MockDataJsonParser.parseUsers("mock/users.json").forEach { storage.createUser(it) }
+    }
+    if (storage.getReviewsCount() == 0) {
+        MockDataJsonParser.praseReview("mock/reviewUser1.json").take(20).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser2.json").take(20).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser3.json").take(20).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser4.json").take(20).forEach { storage.createReview(it) }
     }
 }

@@ -2,6 +2,7 @@ package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
+import cz.cvut.fit.vwm.collaborativefiltering.route.reviews
 import cz.cvut.fit.vwm.collaborativefiltering.route.songs
 import cz.cvut.fit.vwm.collaborativefiltering.route.users
 import io.ktor.application.Application
@@ -34,6 +35,7 @@ fun Application.main() {
     routing {
         songs(storage)
         users(storage)
+        reviews(storage)
     }
 }
 
