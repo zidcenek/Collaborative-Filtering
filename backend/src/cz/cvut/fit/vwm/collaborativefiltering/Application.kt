@@ -1,6 +1,7 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
+import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
 import cz.cvut.fit.vwm.collaborativefiltering.route.songs
 import cz.cvut.fit.vwm.collaborativefiltering.route.users
 import io.ktor.application.Application
@@ -13,11 +14,10 @@ import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
 import io.ktor.response.respond
 import io.ktor.routing.routing
-import java.io.File
 
 @KtorExperimentalLocationsAPI
 fun Application.main() {
-    val storage = DatabaseInteractor(File("$DB_FOLDER/$DB_NAME"))
+    val storage = DatabaseInteractor(MySqlConnection.create("jdbc:mysql://localhost:3306/$DB_NAME?useSSL=false&serverTimezone=Europe/Prague", "root", ""))
 
     install(DefaultHeaders)
     install(CallLogging)

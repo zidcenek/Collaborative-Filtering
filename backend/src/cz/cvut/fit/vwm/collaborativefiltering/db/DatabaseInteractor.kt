@@ -6,7 +6,6 @@ import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
 import cz.cvut.fit.vwm.collaborativefiltering.hash
 import org.jetbrains.squash.connection.DatabaseConnection
 import org.jetbrains.squash.connection.transaction
-import org.jetbrains.squash.dialects.h2.H2Connection
 import org.jetbrains.squash.expressions.count
 import org.jetbrains.squash.expressions.eq
 import org.jetbrains.squash.query.from
@@ -17,12 +16,9 @@ import org.jetbrains.squash.schema.create
 import org.jetbrains.squash.statements.fetch
 import org.jetbrains.squash.statements.insertInto
 import org.jetbrains.squash.statements.values
-import java.io.File
 
 
-class DatabaseInteractor(val db: DatabaseConnection = H2Connection.createMemoryConnection()) : IDatabaseInteractor {
-
-    constructor(dir: File) : this(H2Connection.create("jdbc:h2:file:${dir.canonicalFile.absolutePath}"))
+class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
 
     init {
         db.transaction {
