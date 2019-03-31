@@ -1,0 +1,7 @@
+backend/.database/*
+.idea/*
+!.idea/vcs.xml
+*.iml
+.gradle
+build
+local.properties
