@@ -99,4 +99,18 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
     override fun getReviewsCount(): Int = db.transaction {
         from(Reviews).select(Reviews.id.count()).execute().single()[0]
     }
+
+
+    override fun updateRanks(): Unit = db.transaction {
+        executeStatement(
+                "UPDATE reviews R1" +
+                        "   JOIN (" +
+                        "       SELECT id, " +
+                        "           RANK() OVER (PARTITION BY user_id ORDER BY `value` DESC) AS my_rank" +
+                        "       FROM reviews" +
+                        "   ) as R2 " +
+                        "   ON R1.id = R2.id" +
+                        "   SET R1.rank = R2.my_rank"
+        )
+    }
 }

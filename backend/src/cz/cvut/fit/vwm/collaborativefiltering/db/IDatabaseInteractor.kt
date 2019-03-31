@@ -18,4 +18,7 @@ interface IDatabaseInteractor : Closeable {
     fun createReview(review: Review): Int
     fun getReviews(): List<Review>
     fun getReviewsCount(): Int
+
+    fun updateRanks()
+
 }

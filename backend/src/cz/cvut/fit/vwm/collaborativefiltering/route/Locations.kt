@@ -14,3 +14,7 @@ class SongsLoc
 @KtorExperimentalLocationsAPI
 @Location("/reviews")
 class ReviewsLoc
+
+@KtorExperimentalLocationsAPI
+@Location("/rank")
+class RankLoc

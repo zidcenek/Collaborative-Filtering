@@ -2,6 +2,7 @@ package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
+import cz.cvut.fit.vwm.collaborativefiltering.route.rank
 import cz.cvut.fit.vwm.collaborativefiltering.route.reviews
 import cz.cvut.fit.vwm.collaborativefiltering.route.songs
 import cz.cvut.fit.vwm.collaborativefiltering.route.users
@@ -36,6 +37,7 @@ fun Application.main() {
         songs(storage)
         users(storage)
         reviews(storage)
+        rank(storage)
     }
 }
 
