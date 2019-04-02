@@ -17,3 +17,6 @@ val ColumnDefinition<Any?>.colNameEsc
 
 val TableDefinition.tableName
     get() = compoundName.id
+
+val TableDefinition.dropStatement
+    get() = "DROP TABLE IF EXISTS $tableName;"

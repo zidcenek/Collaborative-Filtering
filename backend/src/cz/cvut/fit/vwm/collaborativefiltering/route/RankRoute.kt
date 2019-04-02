@@ -11,7 +11,7 @@ import io.ktor.routing.Route
 @KtorExperimentalLocationsAPI
 fun Route.rank(storage: DatabaseInteractor) {
     get<RankLoc> {
-        storage.updateRanks()
+        storage.updateSpearmanCoefficients()
         call.respond(RanksUpdatedResponse(true))
     }
 }

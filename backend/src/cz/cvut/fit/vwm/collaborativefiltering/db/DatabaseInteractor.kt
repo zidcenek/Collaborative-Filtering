@@ -1,13 +1,10 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
-import cz.cvut.fit.vwm.collaborativefiltering.colName
-import cz.cvut.fit.vwm.collaborativefiltering.colNameEsc
+import cz.cvut.fit.vwm.collaborativefiltering.*
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
-import cz.cvut.fit.vwm.collaborativefiltering.hash
-import cz.cvut.fit.vwm.collaborativefiltering.tableName
 import org.jetbrains.squash.connection.DatabaseConnection
 import org.jetbrains.squash.connection.transaction
 import org.jetbrains.squash.expressions.count
@@ -17,6 +14,7 @@ import org.jetbrains.squash.query.select
 import org.jetbrains.squash.query.where
 import org.jetbrains.squash.results.get
 import org.jetbrains.squash.schema.create
+import org.jetbrains.squash.statements.deleteFrom
 import org.jetbrains.squash.statements.fetch
 import org.jetbrains.squash.statements.insertInto
 import org.jetbrains.squash.statements.values
@@ -26,6 +24,9 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
 
     init {
         db.transaction {
+            executeStatement(Users.dropStatement) // TODO testing only
+            executeStatement(CorrelationCoefficients.dropStatement)
+            executeStatement(Reviews.dropStatement)
             databaseSchema().create(Songs, Reviews, Recommendations, CorrelationCoefficients, Users)
         }
     }
@@ -103,7 +104,7 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
         from(Reviews).select(Reviews.id.count()).execute().single()[0]
     }
 
-    override fun updateRanks(): Unit = db.transaction {
+    override fun updateSpearmanCoefficients(): Unit = db.transaction {
         val rev1 = "R1"
         val rev2 = "R2"
         val newRank = "new_rank"
@@ -119,5 +120,43 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
                     "   SET $rev1.${rank.colName} = $rev2.$newRank"
         }
         executeStatement(statement)
+
+        val crossedUsers = "cross_users"
+        val distance = "distance"
+
+        val u1Id = "u1_id"
+        val u2Id = "u2_id"
+
+        deleteFrom(CorrelationCoefficients).execute()
+
+        val spearmanStatement = with(Reviews) {
+            with(CorrelationCoefficients) {
+                "INSERT INTO ${CorrelationCoefficients.tableName} " +
+                        "            (${userId1.colNameEsc}, " +
+                        "             ${userId2.colNameEsc}, " +
+                        "             $distance, " +
+                        "             ${spearmanCoeficient.colNameEsc}) " +
+                        "SELECT $crossedUsers.$u1Id, " +
+                        "       $crossedUsers.$u2Id, " +
+                        "       Sum(Pow(R1.${rank.colNameEsc} - R2.${rank.colNameEsc}, 2)) AS $distance, " +
+                        "       (1 - (( 6 * Sum(Pow(R1.${rank.colNameEsc} - R2.${rank.colNameEsc}, 2)) ) / ( " +
+                        "          Pow(Count($crossedUsers.$u2Id), 3) - Count( " +
+                        "           $crossedUsers.u2_id) ) ) )" +
+                        "FROM   (SELECT U1.id AS $u1Id, " +
+                        "               U2.id AS $u2Id " +
+                        "        FROM   ${Users.tableName} U1, " +
+                        "               ${Users.tableName} U2 " +
+                        "        WHERE U1.id < U2.id) $crossedUsers " +
+                        "       LEFT JOIN ${Reviews.tableName} R1 " +
+                        "              ON $crossedUsers.$u1Id = R1.${userId.colNameEsc} " +
+                        "       LEFT JOIN ${Reviews.tableName} R2 " +
+                        "              ON $crossedUsers.$u2Id = R2.${userId.colNameEsc} " +
+                        "        WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc} " +
+                        "GROUP  BY $crossedUsers.$u1Id, " +
+                        "          $crossedUsers.$u2Id " +
+                        "HAVING $distance IS NOT NULL "
+            }
+        }
+        executeStatement(spearmanStatement)
     }
 }

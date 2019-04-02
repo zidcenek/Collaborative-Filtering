@@ -19,6 +19,6 @@ interface IDatabaseInteractor : Closeable {
     fun getReviews(): List<Review>
     fun getReviewsCount(): Int
 
-    fun updateRanks()
+    fun updateSpearmanCoefficients()
 
 }

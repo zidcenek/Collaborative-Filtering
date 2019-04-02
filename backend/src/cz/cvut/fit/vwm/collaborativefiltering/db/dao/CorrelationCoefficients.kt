@@ -7,5 +7,5 @@ object CorrelationCoefficients : TableDefinition() {
     val userId1 = integer("user_id_1").index()
     val userId2 = integer("user_id_2").index()
     val distance = integer("distance")
-    val spearmanCoeficient = decimal("spearman_coef", 38, 5)
+    val spearmanCoeficient = decimal("spearman_coef", 38, 20)
 }
