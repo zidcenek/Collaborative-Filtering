@@ -119,5 +119,9 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
                     "   SET $rev1.${rank.colName} = $rev2.$newRank"
         }
         executeStatement(statement)
+
+
     }
+
+
 }
