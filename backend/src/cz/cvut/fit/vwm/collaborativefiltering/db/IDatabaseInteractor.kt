@@ -1,5 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
@@ -20,5 +21,8 @@ interface IDatabaseInteractor : Closeable {
     fun getReviewsCount(): Int
 
     fun updateSpearmanCoefficients()
+    fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient
+    fun getSpearmanCoefficients(userId: Int): List<CorrelationCoeficient>
+    fun getSpearmanCoefficients(): List<CorrelationCoeficient>
 
 }

@@ -1,14 +1,17 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
 import cz.cvut.fit.vwm.collaborativefiltering.*
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
 import org.jetbrains.squash.connection.DatabaseConnection
 import org.jetbrains.squash.connection.transaction
+import org.jetbrains.squash.expressions.and
 import org.jetbrains.squash.expressions.count
 import org.jetbrains.squash.expressions.eq
+import org.jetbrains.squash.expressions.or
 import org.jetbrains.squash.query.from
 import org.jetbrains.squash.query.select
 import org.jetbrains.squash.query.where
@@ -158,5 +161,35 @@ class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
             }
         }
         executeStatement(spearmanStatement)
+    }
+
+    override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {
+        val (first, second) = if (uid1 < uid2) Pair(uid1, uid2) else Pair(uid2, uid1)
+        with(CorrelationCoefficients) {
+            from(this)
+                    .where { ((userId1 eq first) and (userId2 eq second)) }
+                    .execute()
+                    .mapNotNull { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .single()
+        }
+    }
+
+    override fun getSpearmanCoefficients(userId: Int): List<CorrelationCoeficient> = db.transaction {
+        with(CorrelationCoefficients) {
+            from(this)
+                    .where { (userId1 eq userId) or (userId2 eq userId) }
+                    .execute()
+                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .toList()
+        }
+    }
+
+    override fun getSpearmanCoefficients(): List<CorrelationCoeficient> = db.transaction {
+        with(CorrelationCoefficients) {
+            from(this)
+                    .execute()
+                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .toList()
+        }
     }
 }
