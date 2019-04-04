@@ -1,14 +1,9 @@
-package cz.cvut.fit.vwm.collaborativefiltering.test
+package cz.cvut.fit.vwm.collaborativefiltering.db
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
-import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
-import cz.cvut.fit.vwm.collaborativefiltering.db.dao.CorrelationCoefficients
-import cz.cvut.fit.vwm.collaborativefiltering.db.dao.Reviews
-import cz.cvut.fit.vwm.collaborativefiltering.db.dao.Songs
-import cz.cvut.fit.vwm.collaborativefiltering.db.dao.Users
-import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
+import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
 import cz.cvut.fit.vwm.collaborativefiltering.dropStatement
 import org.jetbrains.squash.connection.transaction
 import org.jetbrains.squash.statements.deleteFrom
@@ -21,7 +16,7 @@ import java.util.*
 
 class SpearmanQueryTest {
 
-    private val storage = DatabaseInteractor(MySqlConnection.create("jdbc:mysql://localhost:3306/vwm_test?useSSL=false&serverTimezone=Europe/Prague", "root", ""))
+    private val storage = DatabaseInteractor()
 
     private val ur1 = MockDataJsonParser.praseReview("mock/reviewUser1.json")
     private val ur2 = MockDataJsonParser.praseReview("mock/reviewUser2.json")
@@ -44,6 +39,7 @@ class SpearmanQueryTest {
             executeStatement(Users.dropStatement)
             executeStatement(CorrelationCoefficients.dropStatement)
             executeStatement(Reviews.dropStatement)
+            executeStatement(Recommendations.dropStatement)
         }
     }
 

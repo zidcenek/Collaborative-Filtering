@@ -56,8 +56,8 @@ public class MockDataJsonParser {
     }
 
     @NotNull
-    public static List<User> parseUsers(String filename) {
-        String jsonTxt = getFileContent(filename);
+    public static List<User> parseUsers(String resourceName) {
+        String jsonTxt = getFileContent(resourceName);
         List<User> users = new ArrayList<>();
 
         try {
@@ -77,8 +77,8 @@ public class MockDataJsonParser {
     }
 
     @NotNull
-    public static List<Review> praseReview(String filename) {
-        String jsonTxt = getFileContent(filename);
+    public static List<Review> praseReview(String resourceName) {
+        String jsonTxt = getFileContent(resourceName);
         List<Review> users = new ArrayList<>();
 
         try {

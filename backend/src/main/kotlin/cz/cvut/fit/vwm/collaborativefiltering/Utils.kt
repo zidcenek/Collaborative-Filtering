@@ -2,14 +2,19 @@ package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
+import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.hex
 import java.net.URL
 import java.net.UnknownHostException
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+@KtorExperimentalAPI
 val hashKey = hex("c11cae575f8e4058662a5ef3c0c2bc")
+@KtorExperimentalAPI
 val hmacKey = SecretKeySpec(hashKey, "HmacSHA1")
+
+@KtorExperimentalAPI
 fun hash(password: String): String {
     val hmac = Mac.getInstance("HmacSHA1")
     hmac.init(hmacKey)
