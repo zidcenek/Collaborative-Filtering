@@ -1,6 +1,7 @@
 package cz.cvut.fit.vwm.collaborativefiltering.test
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.CorrelationCoefficients
@@ -52,6 +53,21 @@ class SpearmanQueryTest {
         }
     }
 
+    private fun insertRandomReviews() {
+        removeAllReviews()
+        val r = Random()
+        ur1.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur2.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur3.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur4.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur5.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur6.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+    }
+
+
+    private fun List<CorrelationCoeficient>.isSpearmanRangeValid() =
+            all { it.spearmanCoeficient >= -1 || it.spearmanCoeficient <= 1 }
+
     private fun testSameUsers(revCountUser1: Int, revCountUser2: Int = revCountUser1) {
         removeAllReviews()
         ur1.take(revCountUser1).forEach { storage.createReview(it) }
@@ -66,19 +82,8 @@ class SpearmanQueryTest {
         Assert.assertEquals(0, sc6.distance)
 
         val sc3 = storage.getSpearmanCoefficients()
-        Assert.assertEquals(true, sc3.all { it.spearmanCoeficient >= -2 || it.spearmanCoeficient <= 2 })
+        Assert.assertEquals(true, sc3.isSpearmanRangeValid())
         Assert.assertEquals(1, sc3.size)
-    }
-
-    private fun insertRandomReviews() {
-        removeAllReviews()
-        val r = Random()
-        ur1.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur2.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur3.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur4.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur5.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur6.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
     }
 
     @Test
@@ -101,7 +106,7 @@ class SpearmanQueryTest {
             insertRandomReviews()
             storage.updateSpearmanCoefficients()
             val sc = storage.getSpearmanCoefficients()
-            Assert.assertEquals(true, sc.all { it.spearmanCoeficient >= -2 || it.spearmanCoeficient <= 2 })
+            Assert.assertEquals(true, sc.isSpearmanRangeValid())
         }
     }
 }
