@@ -6,6 +6,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
+import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
 import org.jetbrains.squash.connection.DatabaseConnection
 import org.jetbrains.squash.connection.transaction
 import org.jetbrains.squash.expressions.and
@@ -23,7 +24,9 @@ import org.jetbrains.squash.statements.insertInto
 import org.jetbrains.squash.statements.values
 
 
-class DatabaseInteractor(val db: DatabaseConnection) : IDatabaseInteractor {
+class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
+        "jdbc:mysql://localhost:3306/$DB_NAME?useSSL=false&serverTimezone=Europe/Prague", "root", ""
+)) : IDatabaseInteractor {
 
     init {
         db.transaction {

@@ -1,7 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
-import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
 import cz.cvut.fit.vwm.collaborativefiltering.route.rank
 import cz.cvut.fit.vwm.collaborativefiltering.route.reviews
 import cz.cvut.fit.vwm.collaborativefiltering.route.songs
@@ -19,7 +18,7 @@ import io.ktor.routing.routing
 
 @KtorExperimentalLocationsAPI
 fun Application.main() {
-    val storage = DatabaseInteractor(MySqlConnection.create("jdbc:mysql://localhost:3306/$DB_NAME?useSSL=false&serverTimezone=Europe/Prague", "root", ""))
+    val storage = DatabaseInteractor()
 
     install(DefaultHeaders)
     install(CallLogging)
