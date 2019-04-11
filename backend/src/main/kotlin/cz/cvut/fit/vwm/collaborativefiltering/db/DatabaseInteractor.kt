@@ -111,6 +111,92 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateSpearmanCoefficients(): Unit = db.transaction {
+        /*deleteFrom(Ranks).execute()
+        val ranksStatement = with(Ranks) {
+            with(Reviews) {
+                "INSERT INTO ${Ranks.tableName}(" +
+                        "${userId1.colNameEsc}, " +
+                        "${userId2.colNameEsc}, " +
+                        "${rank1.colNameEsc}, " +
+                        "${rank2.colNameEsc}, " +
+                        "${songId.colNameEsc})\n" +
+                 "SELECT \n" +
+                        "\tU1.id AS user_id_1,\n" +
+                        "\tU2.id AS user_id_2,\n" +
+                        "\tRANK() OVER( PARTITION BY U1.id, U2.id ORDER BY R1.value ) AS my_rank,\n" +
+                        "    RANK() OVER( PARTITION BY U1.id, U2.id ORDER BY R2.value ) AS my_rank,\n" +
+                        "    R1.song_id\n" +
+                        "FROM users U1\n" +
+                        "CROSS JOIN users U2\n" +
+                        "JOIN reviews R1 ON U1.id = R1.user_id\n" +
+                        "JOIN reviews R2 ON U2.id = R2.user_id\n" +
+                 "WHERE R1.song_id = R2.song_id\n" +
+                        "AND U1.id < U2.id\n" +
+                        "AND not U1.id = U2.id "
+
+            }
+        }
+        deleteFrom(CorrelationCoefficients).execute()
+        val spearmanStatement = with(Ranks) {
+            with(CorrelationCoefficients) {
+                "INSERT INTO correlationcoefficients(user_id_1, user_id_2, distance, spearman_coef) \n" +
+                "SELECT \n" +
+                        "   user_id_1, \n" +
+                        "    user_id_2,\n" +
+                        "    SUM(POW(rank_1 - rank_2, 2)) as sum_of_distance,\n" +
+                        "    (1 - ((6 * SUM(POW(rank_1 - rank_2, 2)) ) / ( POW(COUNT(user_id_1),3) - COUNT(user_id_1)) ) ) as spearman\n" +
+                        "FROM ranks\n" +
+                        "GROUP BY user_id_1, user_id_2\n" +
+                "HAVING COUNT(user_id_1) > 1\n" +
+                        "\n" +
+                        "Vyplnění tabulky CorrelationCoefficient z tabulky Ranks\n" +
+                        "---\n" +
+                "SELECT \n" +
+                        "\tSUM(POW(rank_1 - rank_2, 2)) as sum_of_distance\n" +
+                        "FROM ranks\n" +
+                        "GROUP BY user_id_1, user_id_2"
+
+            }
+        }
+        executeStatement(ranksStatement)
+        executeStatement(spearmanStatement)
+        */
+
+        deleteFrom(CorrelationCoefficients).execute()
+        val ultimateSpearmanStatement = with(Reviews) {
+            with(CorrelationCoefficients) {
+                "INSERT INTO correlationcoefficients(user_id_1, user_id_2, distance, spearman_coef)\n" +
+                        "SELECT user_id_1,\n" +
+                        "       user_id_2,\n" +
+                        "       SUM(POW(my_rank_1 - my_rank_2, 2)) AS sum_of_distance,\n" +
+                        "       (1 - ((6 * SUM(POW(my_rank_1 - my_rank_2, 2))) / (POW(COUNT(user_id_1), 3) - COUNT(user_id_1)))) AS spearman\n" +
+                        "FROM\n" +
+                        "  (SELECT U1.id AS user_id_1,\n" +
+                        "          U2.id AS user_id_2,\n" +
+                        "          (RANK() OVER(PARTITION BY U1.id, U2.id\n" +
+                        "                       ORDER BY R1.value) + ((COUNT(1) OVER (PARTITION BY U1.id,\n" +
+                        "                                                                          U2.id,\n" +
+                        "                                                                          R1.value) - 1) / 2))AS my_rank_1,\n" +
+                        "          (RANK() OVER(PARTITION BY U1.id, U2.id\n" +
+                        "                       ORDER BY R2.value) + ((COUNT(1) OVER (PARTITION BY U1.id,\n" +
+                        "                                                                          U2.id,\n" +
+                        "                                                                          R2.value) - 1) / 2)) AS my_rank_2,\n" +
+                        "          R1.song_id\n" +
+                        "   FROM users U1\n" +
+                        "   CROSS JOIN users U2\n" +
+                        "   JOIN reviews R1 ON U1.id = R1.user_id\n" +
+                        "   JOIN reviews R2 ON U2.id = R2.user_id\n" +
+                        "   WHERE R1.song_id = R2.song_id\n" +
+                        "     AND U1.id < U2.id\n" +
+                        "     AND NOT U1.id = U2.id ) RANKING_TABLE\n" +
+                        "GROUP BY user_id_1,\n" +
+                        "         user_id_2\n" +
+                        "HAVING COUNT(user_id_1) > 1"
+            }
+        }
+        executeStatement(ultimateSpearmanStatement)
+        /*
+
         val rev1 = "R1"
         val rev2 = "R2"
         val newRank = "new_rank"
@@ -163,7 +249,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                         "HAVING $distance IS NOT NULL "
             }
         }
-        executeStatement(spearmanStatement)
+        executeStatement(spearmanStatement)*/
     }
 
     override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {
