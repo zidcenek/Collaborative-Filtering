@@ -35,5 +35,7 @@ fun fillDbWithMockData(storage: DatabaseInteractor) {
         MockDataJsonParser.praseReview("mock/reviewUser3.json").take(100).forEach { storage.createReview(it) }
         MockDataJsonParser.praseReview("mock/reviewUser4.json").take(100).forEach { storage.createReview(it) }
         MockDataJsonParser.praseReview("mock/reviewUser5.json").take(100).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser6.json").take(100).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser7.json").take(100).forEach { storage.createReview(it) }
     }
 }
