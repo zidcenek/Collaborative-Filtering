@@ -176,6 +176,63 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(ultimateSpearmanStatement)
+
+        val user = 5 // which user
+        val limit = 5 // how many songs to recommend
+
+        deleteFrom(Recommendations).execute()
+
+        val recommendationForUser = with(Reviews) {
+            with(CorrelationCoefficients){
+                with (Recommendations) {
+                    "INSERT INTO recommendations(user_id, song_id, viewed) " +
+                            "SELECT $user AS REF, " +
+                            "       NOT_LISTENED.song_id, " +
+                            "       0 AS viewed " +
+                            "FROM " +
+                            "( " +
+                            "    ( " +
+                            "        SELECT song_id, value, user_id_1, user_id_2 " +
+                            "           FROM " +
+                            "             (SELECT user_id_1, " +
+                            "                     user_id_2 " +
+                            "              FROM correlationcoefficients " +
+                            "              WHERE user_id_1 = $user " +
+                            "              ORDER BY spearman_coef DESC " +
+                            "              LIMIT 2) TOP_MATCHING " +
+                            "           JOIN reviews R1 ON user_id_2 = R1.user_id " +
+                            "           WHERE R1.song_id NOT IN " +
+                            "               (SELECT In_R.song_id " +
+                            "                FROM reviews In_R " +
+                            "                WHERE In_R.user_id = $user ) " +
+                            "           LIMIT 3" +
+                            "    ) " +
+                            "    UNION " +
+                            "    ( " +
+                            "        SELECT song_id, value, user_id_1, user_id_2 " +
+                            "           FROM " +
+                            "             (SELECT user_id_1, " +
+                            "                     user_id_2 " +
+                            "              FROM correlationcoefficients " +
+                            "              WHERE user_id_2 = $user " +
+                            "              ORDER BY spearman_coef DESC " +
+                            "              LIMIT 2) TOP_MATCHING " +
+                            "           JOIN reviews R1 ON user_id_1 = R1.user_id " +
+                            "           WHERE R1.song_id NOT IN " +
+                            "               (SELECT In_R.song_id " +
+                            "                FROM reviews In_R " +
+                            "                WHERE In_R.user_id = $user ) " +
+                            "           LIMIT 3" +
+                            "    ) " +
+                            ")NOT_LISTENED " +
+                            "GROUP BY NOT_LISTENED.song_id " +
+                            "ORDER BY AVG(NOT_LISTENED.value) DESC, COUNT(NOT_LISTENED.song_id) DESC " +
+                            "LIMIT $limit"
+                }
+            }
+        }
+        executeStatement(recommendationForUser)
+
     }
 
     override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {
