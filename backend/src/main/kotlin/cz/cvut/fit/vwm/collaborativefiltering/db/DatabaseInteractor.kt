@@ -111,145 +111,56 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateSpearmanCoefficients(): Unit = db.transaction {
-        /*deleteFrom(Ranks).execute()
-        val ranksStatement = with(Ranks) {
-            with(Reviews) {
-                "INSERT INTO ${Ranks.tableName}(" +
-                        "${userId1.colNameEsc}, " +
-                        "${userId2.colNameEsc}, " +
-                        "${rank1.colNameEsc}, " +
-                        "${rank2.colNameEsc}, " +
-                        "${songId.colNameEsc})\n" +
-                 "SELECT \n" +
-                        "\tU1.id AS user_id_1,\n" +
-                        "\tU2.id AS user_id_2,\n" +
-                        "\tRANK() OVER( PARTITION BY U1.id, U2.id ORDER BY R1.value ) AS my_rank,\n" +
-                        "    RANK() OVER( PARTITION BY U1.id, U2.id ORDER BY R2.value ) AS my_rank,\n" +
-                        "    R1.song_id\n" +
-                        "FROM users U1\n" +
-                        "CROSS JOIN users U2\n" +
-                        "JOIN reviews R1 ON U1.id = R1.user_id\n" +
-                        "JOIN reviews R2 ON U2.id = R2.user_id\n" +
-                 "WHERE R1.song_id = R2.song_id\n" +
-                        "AND U1.id < U2.id\n" +
-                        "AND not U1.id = U2.id "
-
-            }
-        }
-        deleteFrom(CorrelationCoefficients).execute()
-        val spearmanStatement = with(Ranks) {
-            with(CorrelationCoefficients) {
-                "INSERT INTO correlationcoefficients(user_id_1, user_id_2, distance, spearman_coef) \n" +
-                "SELECT \n" +
-                        "   user_id_1, \n" +
-                        "    user_id_2,\n" +
-                        "    SUM(POW(rank_1 - rank_2, 2)) as sum_of_distance,\n" +
-                        "    (1 - ((6 * SUM(POW(rank_1 - rank_2, 2)) ) / ( POW(COUNT(user_id_1),3) - COUNT(user_id_1)) ) ) as spearman\n" +
-                        "FROM ranks\n" +
-                        "GROUP BY user_id_1, user_id_2\n" +
-                "HAVING COUNT(user_id_1) > 1\n" +
-                        "\n" +
-                        "Vyplnění tabulky CorrelationCoefficient z tabulky Ranks\n" +
-                        "---\n" +
-                "SELECT \n" +
-                        "\tSUM(POW(rank_1 - rank_2, 2)) as sum_of_distance\n" +
-                        "FROM ranks\n" +
-                        "GROUP BY user_id_1, user_id_2"
-
-            }
-        }
-        executeStatement(ranksStatement)
-        executeStatement(spearmanStatement)
-        */
-
+        val distance = "distance"
+        val u1Id = "user_id_1"
+        val u2Id = "user_id_2"
+        val myRank1 = "my_rank_1"
+        val myRank2 = "my_rank_2"
+        val minSame = "1" // must be at least 1 otherwise division by 0 (1-1)
+        /*
+        * 1. makes a cross join of users
+        * 2. joins reviews on user_id for both user columns
+        * 3. filters only those lines that have the same song_id
+        * 4. recalculates rank partitioned by (userId1 and userId2) depending on review.value
+        * 5. calculates distanec, sum_of_distances and spearman_coeficient
+        * 6. saves it to CorrelationCoefficients table
+        * */
         deleteFrom(CorrelationCoefficients).execute()
         val ultimateSpearmanStatement = with(Reviews) {
             with(CorrelationCoefficients) {
-                "INSERT INTO correlationcoefficients(user_id_1, user_id_2, distance, spearman_coef)\n" +
-                        "SELECT user_id_1,\n" +
-                        "       user_id_2,\n" +
-                        "       SUM(POW(my_rank_1 - my_rank_2, 2)) AS sum_of_distance,\n" +
-                        "       (1 - ((6 * SUM(POW(my_rank_1 - my_rank_2, 2))) / (POW(COUNT(user_id_1), 3) - COUNT(user_id_1)))) AS spearman\n" +
-                        "FROM\n" +
-                        "  (SELECT U1.id AS user_id_1,\n" +
-                        "          U2.id AS user_id_2,\n" +
-                        "          (RANK() OVER(PARTITION BY U1.id, U2.id\n" +
-                        "                       ORDER BY R1.value) + ((COUNT(1) OVER (PARTITION BY U1.id,\n" +
-                        "                                                                          U2.id,\n" +
-                        "                                                                          R1.value) - 1) / 2))AS my_rank_1,\n" +
-                        "          (RANK() OVER(PARTITION BY U1.id, U2.id\n" +
-                        "                       ORDER BY R2.value) + ((COUNT(1) OVER (PARTITION BY U1.id,\n" +
-                        "                                                                          U2.id,\n" +
-                        "                                                                          R2.value) - 1) / 2)) AS my_rank_2,\n" +
-                        "          R1.song_id\n" +
-                        "   FROM users U1\n" +
-                        "   CROSS JOIN users U2\n" +
-                        "   JOIN reviews R1 ON U1.id = R1.user_id\n" +
-                        "   JOIN reviews R2 ON U2.id = R2.user_id\n" +
-                        "   WHERE R1.song_id = R2.song_id\n" +
-                        "     AND U1.id < U2.id\n" +
-                        "     AND NOT U1.id = U2.id ) RANKING_TABLE\n" +
-                        "GROUP BY user_id_1,\n" +
-                        "         user_id_2\n" +
-                        "HAVING COUNT(user_id_1) > 1"
+                "INSERT INTO ${CorrelationCoefficients.tableName} " +
+                        "   (${userId1.colNameEsc}, " +
+                        "    ${userId2.colNameEsc}, " +
+                        "    $distance, " +
+                        "    ${spearmanCoeficient.colNameEsc}) " +
+                        "SELECT $u1Id, " +
+                        "       $u2Id, " +
+                        "       SUM(POW($myRank1 - $myRank2, 2)) AS sum_of_distance, " +
+                        "       (1 - ((6 * SUM(POW($myRank1 - $myRank2, 2))) / (POW(COUNT($u1Id), 3) - COUNT($u1Id)))) AS spearman " +
+                        "FROM " +
+                        "  (SELECT U1.id AS $u1Id, " +
+                        "          U2.id AS $u2Id, " +
+                        "          (RANK() OVER(PARTITION BY U1.id, U2.id " +
+                        "                       ORDER BY R1.${value.colNameEsc}) + ((COUNT(1) OVER (PARTITION BY U1.id, " +
+                        "                                                                          U2.id, " +
+                        "                                                                          R1.${value.colNameEsc}) - 1) / 2))AS $myRank1, " +
+                        "          (RANK() OVER(PARTITION BY U1.id, U2.id " +
+                        "                       ORDER BY R2.${value.colNameEsc}) + ((COUNT(1) OVER (PARTITION BY U1.id, " +
+                        "                                                                          U2.id, " +
+                        "                                                                          R2.${value.colNameEsc}) - 1) / 2)) AS $myRank2, " +
+                        "          R1.${songId.colNameEsc} " +
+                        "   FROM ${Users.tableName} U1 " +
+                        "   CROSS JOIN ${Users.tableName} U2 " +
+                        "   JOIN ${Reviews.tableName} R1 ON U1.id = R1.${userId.colNameEsc} " +
+                        "   JOIN ${Reviews.tableName} R2 ON U2.id = R2.${userId.colNameEsc} " +
+                        "   WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc} " +
+                        "   AND U1.id < U2.id ) RANKING_TABLE " +
+                        "GROUP BY $u1Id, " +
+                        "         $u2Id " +
+                        "HAVING COUNT($u1Id) > $minSame"
             }
         }
         executeStatement(ultimateSpearmanStatement)
-        /*
-
-        val rev1 = "R1"
-        val rev2 = "R2"
-        val newRank = "new_rank"
-        val statement = with(Reviews) {
-            "           UPDATE $tableName $rev1" +
-                    "   JOIN (" +
-                    "       SELECT ${id.colNameEsc}, " +
-                    "           RANK() OVER (PARTITION BY ${userId.colNameEsc} " +
-                    "       ORDER BY ${value.colNameEsc} DESC) AS $newRank" +
-                    "       FROM $tableName" +
-                    "   ) AS $rev2 " +
-                    "   ON $rev1.${id.colName} = $rev2.${id.colName}" +
-                    "   SET $rev1.${rank.colName} = $rev2.$newRank"
-        }
-        executeStatement(statement)
-
-        val crossedUsers = "cross_users"
-        val distance = "distance"
-
-        val u1Id = "u1_id"
-        val u2Id = "u2_id"
-
-        deleteFrom(CorrelationCoefficients).execute()
-
-        val spearmanStatement = with(Reviews) {
-            with(CorrelationCoefficients) {
-                "INSERT INTO ${CorrelationCoefficients.tableName} " +
-                        "            (${userId1.colNameEsc}, " +
-                        "             ${userId2.colNameEsc}, " +
-                        "             $distance, " +
-                        "             ${spearmanCoeficient.colNameEsc}) " +
-                        "SELECT $crossedUsers.$u1Id, " +
-                        "       $crossedUsers.$u2Id, " +
-                        "       Sum(Pow(R1.${rank.colNameEsc} - R2.${rank.colNameEsc}, 2)) AS $distance, " +
-                        "       (1 - (( 6 * Sum(Pow(R1.${rank.colNameEsc} - R2.${rank.colNameEsc}, 2)) ) / ( " +
-                        "          Pow(Count($crossedUsers.$u2Id), 3) - Count( " +
-                        "           $crossedUsers.u2_id) ) ) )" +
-                        "FROM   (SELECT U1.id AS $u1Id, " +
-                        "               U2.id AS $u2Id " +
-                        "        FROM   ${Users.tableName} U1, " +
-                        "               ${Users.tableName} U2 " +
-                        "        WHERE U1.id < U2.id) $crossedUsers " +
-                        "       LEFT JOIN ${Reviews.tableName} R1 " +
-                        "              ON $crossedUsers.$u1Id = R1.${userId.colNameEsc} " +
-                        "       LEFT JOIN ${Reviews.tableName} R2 " +
-                        "              ON $crossedUsers.$u2Id = R2.${userId.colNameEsc} " +
-                        "        WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc} " +
-                        "GROUP  BY $crossedUsers.$u1Id, " +
-                        "          $crossedUsers.$u2Id " +
-                        "HAVING $distance IS NOT NULL "
-            }
-        }
-        executeStatement(spearmanStatement)*/
     }
 
     override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {
