@@ -116,48 +116,64 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         val u2Id = "user_id_2"
         val myRank1 = "my_rank_1"
         val myRank2 = "my_rank_2"
-        val minSame = "1" // must be at least 1 otherwise division by 0 (1-1)
+        val minSame = "1" // count(uid) in SQL QUERY must be above 1 otherwise division by 0 (1-1)
         /*
         * 1. makes a cross join of users
         * 2. joins reviews on user_id for both user columns
         * 3. filters only those lines that have the same song_id
         * 4. recalculates rank partitioned by (userId1 and userId2) depending on review.value
-        * 5. calculates distanec, sum_of_distances and spearman_coeficient
+        * 5. calculates distance, sum_of_distances and spearman_coeficient
         * 6. saves it to CorrelationCoefficients table
         * */
         deleteFrom(CorrelationCoefficients).execute()
+
         val ultimateSpearmanStatement = with(Reviews) {
             with(CorrelationCoefficients) {
-                "INSERT INTO ${CorrelationCoefficients.tableName} " +
-                        "   (${userId1.colNameEsc}, " +
-                        "    ${userId2.colNameEsc}, " +
-                        "    $distance, " +
-                        "    ${spearmanCoeficient.colNameEsc}) " +
-                        "SELECT $u1Id, " +
-                        "       $u2Id, " +
-                        "       SUM(POW($myRank1 - $myRank2, 2)) AS sum_of_distance, " +
-                        "       (1 - ((6 * SUM(POW($myRank1 - $myRank2, 2))) / (POW(COUNT($u1Id), 3) - COUNT($u1Id)))) AS spearman " +
-                        "FROM " +
-                        "  (SELECT U1.id AS $u1Id, " +
-                        "          U2.id AS $u2Id, " +
-                        "          (RANK() OVER(PARTITION BY U1.id, U2.id " +
-                        "                       ORDER BY R1.${value.colNameEsc}) + ((COUNT(1) OVER (PARTITION BY U1.id, " +
-                        "                                                                          U2.id, " +
-                        "                                                                          R1.${value.colNameEsc}) - 1) / 2))AS $myRank1, " +
-                        "          (RANK() OVER(PARTITION BY U1.id, U2.id " +
-                        "                       ORDER BY R2.${value.colNameEsc}) + ((COUNT(1) OVER (PARTITION BY U1.id, " +
-                        "                                                                          U2.id, " +
-                        "                                                                          R2.${value.colNameEsc}) - 1) / 2)) AS $myRank2, " +
-                        "          R1.${songId.colNameEsc} " +
-                        "   FROM ${Users.tableName} U1 " +
-                        "   CROSS JOIN ${Users.tableName} U2 " +
-                        "   JOIN ${Reviews.tableName} R1 ON U1.id = R1.${userId.colNameEsc} " +
-                        "   JOIN ${Reviews.tableName} R2 ON U2.id = R2.${userId.colNameEsc} " +
-                        "   WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc} " +
-                        "   AND U1.id < U2.id ) RANKING_TABLE " +
-                        "GROUP BY $u1Id, " +
-                        "         $u2Id " +
-                        "HAVING COUNT($u1Id) > $minSame"
+                """
+                    INSERT INTO ${CorrelationCoefficients.tableName}
+                        (   ${userId1.colNameEsc},
+                            ${userId2.colNameEsc},
+                            $distance,
+                            ${spearmanCoeficient.colNameEsc}
+                        )
+
+                        SELECT  $u1Id,
+                                $u2Id,
+                                SUM(POW($myRank1 - $myRank2, 2)) AS sum_of_distance,
+                                (1 - ((6 * SUM(POW($myRank1 - $myRank2, 2))) / (POW(COUNT($u1Id), 3) - COUNT($u1Id)))) AS spearman
+                        FROM
+                            (
+                                SELECT  U1.id AS $u1Id,
+                                        U2.id AS $u2Id,
+                                        (RANK() OVER  ( PARTITION BY U1.id, U2.id
+                                                        ORDER BY R1.${value.colNameEsc}) + (
+                                                            (COUNT(1) OVER (PARTITION BY
+                                                                            U1.id,
+                                                                            U2.id,
+                                                                            R1.${value.colNameEsc}) - 1
+                                                            ) / 2)
+                                        ) AS $myRank1,
+
+                                        (RANK() OVER  ( PARTITION BY U1.id, U2.id
+                                                        ORDER BY R2.${value.colNameEsc}) + (
+                                                            (COUNT(1) OVER (PARTITION BY
+                                                                            U1.id,
+                                                                            U2.id,
+                                                                            R2.${value.colNameEsc}) - 1
+                                                            ) / 2)
+                                        ) AS $myRank2,
+
+                                        R1.${songId.colNameEsc}
+                                FROM ${Users.tableName} U1
+                                CROSS JOIN ${Users.tableName} U2
+                                JOIN ${Reviews.tableName} R1 ON U1.id = R1.${userId.colNameEsc}
+                                JOIN ${Reviews.tableName} R2 ON U2.id = R2.${userId.colNameEsc}
+                                WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc}
+                                AND U1.id < U2.id
+                            ) RANKING_TABLE
+                        GROUP BY $u1Id, $u2Id
+                        HAVING COUNT($u1Id) > $minSame
+                """
             }
         }
         executeStatement(ultimateSpearmanStatement)
