@@ -176,7 +176,9 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(ultimateSpearmanStatement)
+    }
 
+    override fun updateRecommendations(): Unit = db.transaction {
         val user = 5 // which user
         val limit = 5 // how many songs to recommend
 
@@ -232,7 +234,6 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(recommendationForUser)
-
     }
 
     override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {

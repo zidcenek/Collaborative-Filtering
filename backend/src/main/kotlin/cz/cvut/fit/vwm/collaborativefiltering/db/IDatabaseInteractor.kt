@@ -25,4 +25,6 @@ interface IDatabaseInteractor : Closeable {
     fun getSpearmanCoefficients(userId: Int): List<CorrelationCoeficient>
     fun getSpearmanCoefficients(): List<CorrelationCoeficient>
 
+    fun updateRecommendations()
+
 }
