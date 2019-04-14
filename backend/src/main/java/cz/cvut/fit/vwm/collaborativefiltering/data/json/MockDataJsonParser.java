@@ -88,8 +88,7 @@ public class MockDataJsonParser {
                 int userId = user.getInt("user_id");
                 int songId = user.getInt("song_id");
                 int value = user.getInt("value");
-                int rank = user.getInt("rank");
-                users.add(new Review(0, userId, songId, value, rank));
+                users.add(new Review(0, userId, songId, value));
             }
         } catch (JSONException e) {
             e.printStackTrace();

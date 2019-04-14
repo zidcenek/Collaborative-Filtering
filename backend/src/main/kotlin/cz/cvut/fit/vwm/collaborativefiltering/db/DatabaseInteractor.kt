@@ -94,7 +94,6 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             it[userId] = review.userId
             it[songId] = review.songId
             it[value] = review.value
-            it[rank] = review.rank
         }.fetch(Reviews.id).execute()
     }
 
@@ -102,7 +101,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         from(Reviews)
                 .select(Reviews)
                 .execute()
-                .map { row -> Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value], row[Reviews.rank]) }
+                .map { row -> Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value]) }
                 .toList()
     }
 

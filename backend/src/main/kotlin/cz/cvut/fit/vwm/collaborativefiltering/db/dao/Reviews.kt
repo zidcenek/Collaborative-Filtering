@@ -7,5 +7,4 @@ object Reviews : TableDefinition() {
     val userId = integer("user_id").index()
     val songId = integer("song_id")
     val value = integer("value")
-    val rank = integer("rank").nullable()
 }
