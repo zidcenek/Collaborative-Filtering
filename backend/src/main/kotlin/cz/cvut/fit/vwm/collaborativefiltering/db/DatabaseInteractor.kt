@@ -184,7 +184,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             from(this)
                     .where { ((userId1 eq first) and (userId2 eq second)) }
                     .execute()
-                    .mapNotNull { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .mapNotNull { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance].toDouble(), it[spearmanCoeficient].toDouble()) }
                     .single()
         }
     }
@@ -194,7 +194,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             from(this)
                     .where { (userId1 eq userId) or (userId2 eq userId) }
                     .execute()
-                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance].toDouble(), it[spearmanCoeficient].toDouble()) }
                     .toList()
         }
     }
@@ -203,7 +203,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         with(CorrelationCoefficients) {
             from(this)
                     .execute()
-                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance], it[spearmanCoeficient].toDouble()) }
+                    .map { CorrelationCoeficient(it[id], it[userId1], it[userId2], it[distance].toDouble(), it[spearmanCoeficient].toDouble()) }
                     .toList()
         }
     }

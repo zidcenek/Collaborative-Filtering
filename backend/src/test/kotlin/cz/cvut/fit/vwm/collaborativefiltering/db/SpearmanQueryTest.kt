@@ -74,8 +74,8 @@ class SpearmanQueryTest {
         val sc6 = storage.getSpearmanCoefficient(6, 1)
         Assert.assertEquals(0, sc1.spearmanCoeficient.compareTo(1))
         Assert.assertEquals(0, sc6.spearmanCoeficient.compareTo(1))
-        Assert.assertEquals(0, sc1.distance)
-        Assert.assertEquals(0, sc6.distance)
+        Assert.assertEquals(0.0, sc1.distance, 10E-38)
+        Assert.assertEquals(0.0, sc6.distance, 10E-38)
 
         val sc3 = storage.getSpearmanCoefficients()
         Assert.assertEquals(true, sc3.isSpearmanRangeValid())
