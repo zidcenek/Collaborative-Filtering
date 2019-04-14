@@ -7,4 +7,5 @@ object Recommendations : TableDefinition() {
     val userId = varchar("user_id", 50)
     val songId = varchar("song_id", 50)
     val viewed = bool("viewed").default(false)
+    val weight = decimal("weight", 38, 20)
 }

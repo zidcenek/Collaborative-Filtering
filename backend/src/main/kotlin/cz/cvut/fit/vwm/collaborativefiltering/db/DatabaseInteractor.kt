@@ -179,6 +179,11 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
+        // TODO calculate for all users at once
+        // TODO avg -> weighted avg (weight in recommendations)
+        // TODO count only spearman > 0
+        // TODO insert only songs with weight >= 3
+
         val user = 5 // which user
         val limit = 5 // how many songs to recommend
 
