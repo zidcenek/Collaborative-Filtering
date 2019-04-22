@@ -23,10 +23,14 @@ class NavBarComponent : RComponent<NavBarComponent.NavBarHandlerProps, ReactComp
 
     override fun RBuilder.render() {
         ul(classes = "nav-list") {
-            navItem("Sample button") {
-                // TODO handle button click
+            navItem("Show songs") {
+                showSongsView()
             }
         }
+    }
+
+    private fun showSongsView() {
+        props.handler(MainView.Songs)
     }
 
     private fun RDOMBuilder<UL>.navItem(title: String, onButtonClick: () -> Unit = {}) {

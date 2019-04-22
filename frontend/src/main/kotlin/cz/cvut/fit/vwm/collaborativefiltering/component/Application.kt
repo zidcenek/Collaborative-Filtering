@@ -4,7 +4,6 @@ import cz.cvut.fit.vwm.collaborativefiltering.ReactComponentNoProps
 import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.div
-import react.dom.h1
 import react.dom.nav
 
 fun RBuilder.application(handler: RHandler<ReactComponentNoProps> = {}) = child(Application::class, handler)
@@ -37,8 +36,10 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
             }
 
             div("content pure-u-1 pure-u-md-3-4") {
-                h1 {
-                    +"Lorem ipsum.. "
+                when (state.selected) {
+                    MainView.Songs -> songListComponent()
+                    else -> {
+                    }
                 }
             }
 
@@ -65,5 +66,6 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
 
 enum class MainView {
     Loading,
-    Home
+    Home,
+    Songs
 }
