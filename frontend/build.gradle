@@ -26,7 +26,7 @@ kotlinFrontend {
 
     npm {
         dependency("react")
-        dependency("core-js")
+        dependency("core-js", '3.0.0')
         dependency("react-dom")
         dependency("react-router")
         dependency("jquery")
@@ -63,14 +63,3 @@ sourceSets {
     test.resources.srcDirs += "src.main.testResources"
 
 }
-
-task createlink { /* workaround for wrong path in kotlin-js-extensions, it creates symbolic link in the wrong path */
-    delete "$project.buildDir.path/node_modules/core-js/features"
-    mkdir "$project.buildDir.path/node_modules/core-js/features"
-    ant.symlink(
-            resource: "$project.buildDir.path/node_modules/core-js/library/fn/object",
-            link: "$project.buildDir.path/node_modules/core-js/features/object"
-    )
-}
-
-createlink.dependsOn run
