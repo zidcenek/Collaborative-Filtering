@@ -180,16 +180,14 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
-        // TODO calculate for all users at once
         // TODO avg -> weighted avg (weight in recommendations)
-        // TODO count only spearman > 0
-        // TODO insert only songs with weight >= 3
+        // TODO check the constants
 
         val numberOfRecommendedSongs = 10 // how many songs to recommend
         val spearmenCoeficientLimit = 0 // the limit spearman coeficient
         val numberOfClosestUseres = 5 // how many best matching users will be taken
         val weightLimit = 2// minimal weight the song has to have to be considered recommendable
-        deleteFrom(Recommendations).execute()
+        //deleteFrom(Recommendations).execute()
 
         val recommendationForUser = with(Reviews) {
             with(CorrelationCoefficients){
@@ -239,6 +237,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                 ORDER  BY avg DESC,
                                           cnt DESC) BEST_SONGS_FOR_USER
                         WHERE  BEST_SONGS_FOR_USER.song_rank <= $numberOfRecommendedSongs
+                        ON DUPLICATE KEY UPDATE viewed = viewed + 1
                     """
                 }
             }
