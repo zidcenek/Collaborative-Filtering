@@ -6,6 +6,6 @@ object Recommendations : TableDefinition() {
     val id = integer("id").autoIncrement().primaryKey()
     val userId = varchar("user_id", 50)
     val songId = varchar("song_id", 50)
-    val viewed = bool("viewed").default(false)
+    val viewed = integer("viewed").default(0)
     val weight = decimal("weight", 38, 20)
 }

@@ -168,7 +168,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                 JOIN ${Reviews.tableName} R1 ON U1.id = R1.${userId.colNameEsc}
                                 JOIN ${Reviews.tableName} R2 ON U2.id = R2.${userId.colNameEsc}
                                 WHERE R1.${songId.colNameEsc} = R2.${songId.colNameEsc}
-                                AND U1.id < U2.id
+                                AND NOT U1.id = U2.id
                             ) RANKING_TABLE
                         GROUP BY $u1Id, $u2Id
                         HAVING COUNT($u1Id) > $minSame
@@ -176,6 +176,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(ultimateSpearmanStatement)
+        updateRecommendations();
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
@@ -184,58 +185,60 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         // TODO count only spearman > 0
         // TODO insert only songs with weight >= 3
 
-        val user = 5 // which user
-        val limit = 5 // how many songs to recommend
-
+        val numberOfRecommendedSongs = 10 // how many songs to recommend
+        val spearmenCoeficientLimit = 0 // the limit spearman coeficient
+        val numberOfClosestUseres = 5 // how many best matching users will be taken
+        val weightLimit = 2// minimal weight the song has to have to be considered recommendable
         deleteFrom(Recommendations).execute()
 
         val recommendationForUser = with(Reviews) {
             with(CorrelationCoefficients){
                 with (Recommendations) {
                     """
-                        INSERT INTO recommendations(user_id, song_id, viewed)
-                            SELECT $user AS REF,
-                                   NOT_LISTENED.song_id,
-                                   0 AS viewed
-                            FROM
-                            (
-                                (
-                                    SELECT song_id, value, user_id_1, user_id_2
-                                       FROM
-                                         (SELECT user_id_1,
-                                                 user_id_2
-                                          FROM correlationcoefficients
-                                          WHERE user_id_1 = $user
-                                          ORDER BY spearman_coef DESC
-                                          LIMIT 2) TOP_MATCHING
-                                       JOIN reviews R1 ON user_id_2 = R1.user_id
-                                       WHERE R1.song_id NOT IN
-                                           (SELECT In_R.song_id
-                                            FROM reviews In_R
-                                            WHERE In_R.user_id = $user )
-                                       LIMIT 3
-                                )
-                                UNION
-                                (
-                                    SELECT song_id, value, user_id_1, user_id_2
-                                       FROM
-                                         (SELECT user_id_1,
-                                                 user_id_2
-                                          FROM correlationcoefficients
-                                          WHERE user_id_2 = $user
-                                          ORDER BY spearman_coef DESC
-                                          LIMIT 2) TOP_MATCHING
-                                       JOIN reviews R1 ON user_id_1 = R1.user_id
-                                       WHERE R1.song_id NOT IN
-                                           (SELECT In_R.song_id
-                                            FROM reviews In_R
-                                            WHERE In_R.user_id = $user )
-                                       LIMIT 3
-                                )
-                            )NOT_LISTENED
-                            GROUP BY NOT_LISTENED.song_id
-                            ORDER BY AVG(NOT_LISTENED.value) DESC, COUNT(NOT_LISTENED.song_id) DESC
-                            LIMIT $limit
+                        INSERT INTO recommendations
+                                    (user_id,
+                                     song_id,
+                                     viewed,
+                                     weight)
+                        SELECT BEST_SONGS_FOR_USER.u_id_1,
+                               BEST_SONGS_FOR_USER.song_id,
+                               0 AS viewed,
+                               BEST_SONGS_FOR_USER.avg
+                        FROM   (SELECT NOT_LISTENED.song_id        AS song_id,
+                                       NOT_LISTENED.user_id_1      AS u_id_1,
+                                       Avg(NOT_LISTENED.value)     AS avg,
+                                       Count(NOT_LISTENED.song_id) AS cnt,
+                                       Rank()
+                                         OVER(
+                                           partition BY u_id_1
+                                           ORDER BY avg DESC)      AS song_rank
+                                FROM   (SELECT user_id_1,
+                                               user_id_2,
+                                               song_id,
+                                               value
+                                        FROM   (SELECT *
+                                                FROM   (SELECT user_id_1,
+                                                               user_id_2,
+                                                               Rank()
+                                                                 OVER(
+                                                                   partition BY user_id_1
+                                                                   ORDER BY spearman_coef DESC) AS
+                                                               my_rank
+                                                        FROM   correlationcoefficients C1
+                                                        WHERE  C1.spearman_coef > $spearmenCoeficientLimit) RANKED_TABLE
+                                                WHERE  RANKED_TABLE.my_rank <= $numberOfClosestUseres) TOP_MATCHING
+                                               JOIN reviews R1
+                                                 ON user_id_2 = R1.user_id
+                                        WHERE  R1.song_id NOT IN (SELECT In_R.song_id
+                                                                  FROM   reviews In_R
+                                                                  WHERE  In_R.user_id = user_id_1))
+                                       NOT_LISTENED
+                                GROUP  BY NOT_LISTENED.user_id_1,
+                                          NOT_LISTENED.song_id
+                                HAVING avg >= $weightLimit
+                                ORDER  BY avg DESC,
+                                          cnt DESC) BEST_SONGS_FOR_USER
+                        WHERE  BEST_SONGS_FOR_USER.song_rank <= $numberOfRecommendedSongs
                     """
                 }
             }
