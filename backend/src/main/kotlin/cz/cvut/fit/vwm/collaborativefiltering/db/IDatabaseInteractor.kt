@@ -12,6 +12,7 @@ interface IDatabaseInteractor : Closeable {
     fun getSongs(): List<Song>
     fun getSongsCount(): Int
 
+    fun getUserByEmail(email: String, hash: String? = null): User?
     fun createUser(user: User): Int
     fun getUsers(): List<User>
     fun getUsersCount(): Int

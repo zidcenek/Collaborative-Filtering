@@ -1,5 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Session
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import cz.cvut.fit.vwm.collaborativefiltering.route.*
 import io.ktor.application.Application
@@ -15,9 +16,9 @@ import io.ktor.routing.routing
 import io.ktor.sessions.SessionTransportTransformerMessageAuthentication
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
+import io.ktor.util.KtorExperimentalAPI
 
-data class Session(val userId: String)
-
+@KtorExperimentalAPI
 @KtorExperimentalLocationsAPI
 fun Application.main() {
     val storage = DatabaseInteractor()
@@ -34,7 +35,7 @@ fun Application.main() {
     }
 
     install(Sessions) {
-        cookie<Session>(name = "SESSION") {
+        cookie<Session>(name = SESSION_USER_NAME) {
             transform(SessionTransportTransformerMessageAuthentication(hashKey))
         }
     }
@@ -47,6 +48,9 @@ fun Application.main() {
         users(storage)
         reviews(storage)
         rank(storage)
+        login(storage, ::hash)
+        register(storage, ::hash)
+        logout()
     }
 }
 

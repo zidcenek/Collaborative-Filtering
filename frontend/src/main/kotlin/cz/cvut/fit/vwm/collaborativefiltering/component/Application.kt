@@ -1,6 +1,9 @@
 package cz.cvut.fit.vwm.collaborativefiltering.component
 
 import cz.cvut.fit.vwm.collaborativefiltering.ReactComponentNoProps
+import cz.cvut.fit.vwm.collaborativefiltering.async
+import cz.cvut.fit.vwm.collaborativefiltering.model.User
+import cz.cvut.fit.vwm.collaborativefiltering.request.UserRpc
 import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.div
@@ -12,6 +15,18 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
 
     init {
         state = ApplicationPageState(MainView.Home)
+        checkUserSession()
+    }
+
+    private fun checkUserSession() {
+        async {
+            val user = UserRpc.checkSession()
+            onUserAssigned(user)
+        }.catch {
+            setState {
+                selected = MainView.Home
+            }
+        }
     }
 
     override fun RBuilder.render() {
@@ -28,7 +43,12 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
                     nav("nav") {
                         if (state.selected != MainView.Loading) {
                             navBarComponent {
-                                attrs.handler = { navBarSelected(it) }
+                                attrs {
+                                    handler = { navBarSelected(it) }
+                                    user = state.currentUser
+                                    handler = { navBarSelected(it) }
+                                    logoutHandler = { onLoggedOut() }
+                                }
                             }
                         }
                     }
@@ -38,6 +58,12 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
             div("content pure-u-1 pure-u-md-3-4") {
                 when (state.selected) {
                     MainView.Songs -> songListComponent()
+                    MainView.Login -> loginComponent {
+                        attrs.userAssigned = { onUserAssigned(it) }
+                    }
+                    MainView.Register -> registerComponent {
+                        attrs.userAssigned = { onUserAssigned(it) }
+                    }
                     else -> {
                     }
                 }
@@ -61,11 +87,32 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
         }
     }
 
-    class ApplicationPageState(var selected: MainView) : RState
+    private fun onUserAssigned(user: User) {
+        setState {
+            currentUser = user
+            selected = MainView.Home
+        }
+    }
+
+    private fun onLoggedOut() {
+        val oldSelected = state.selected
+
+        setState {
+            currentUser = null
+            selected = when (oldSelected) {
+                MainView.Home, MainView.Login, MainView.Register -> oldSelected
+                else -> MainView.Home
+            }
+        }
+    }
+
+    class ApplicationPageState(var selected: MainView, var currentUser: User? = null) : RState
 }
 
 enum class MainView {
     Loading,
     Home,
-    Songs
+    Songs,
+    Login,
+    Register
 }
