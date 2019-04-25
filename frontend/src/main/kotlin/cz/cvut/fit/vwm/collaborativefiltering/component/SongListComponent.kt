@@ -1,8 +1,8 @@
 package cz.cvut.fit.vwm.collaborativefiltering.component
 
-import cz.cvut.fit.vwm.collaborativefiltering.getSongList
 import cz.cvut.fit.vwm.collaborativefiltering.launch
 import cz.cvut.fit.vwm.collaborativefiltering.model.Song
+import cz.cvut.fit.vwm.collaborativefiltering.request.SongRpc
 import react.*
 import react.dom.*
 
@@ -20,7 +20,7 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
 
     private fun getSongs() {
         launch {
-            val list = getSongList()
+            val list = SongRpc.getList()
 
             console.log("songs", list)
             setState {
