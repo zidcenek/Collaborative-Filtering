@@ -9,6 +9,8 @@ interface IDatabaseInteractor : Closeable {
     fun getSongs(): List<Song>
     fun getSongsCount(): Int
 
+    fun getReviewedSongs(userId: Int): List<ReviewedSong>
+
     fun getUserByEmail(email: String, hash: String? = null): User?
     fun createUser(user: User): Int
     fun getUsers(): List<User>
@@ -28,5 +30,6 @@ interface IDatabaseInteractor : Closeable {
     fun updateRecommendations()
     fun getUserSongRecommendations(userId: Int): List<SongRecommendation>
     fun getUserSongRecommendationsAndIncrementViewedCount(userId: Int): List<SongRecommendation>
+
 
 }

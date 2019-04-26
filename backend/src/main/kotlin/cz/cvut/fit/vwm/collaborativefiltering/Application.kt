@@ -47,6 +47,7 @@ fun Application.main() {
         songs(storage)
         users(storage)
         reviews(storage)
+        reviewedSongs(storage)
         rank(storage)
         recommendations(storage)
         login(storage, ::hash)

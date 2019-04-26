@@ -54,10 +54,20 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         from(Songs)
                 .select(Songs)
                 .execute()
-                .map { row -> Song(row[Songs.id], row[Songs.mbid], row[Songs.artist], row[Songs.title], row[Songs.lastFmRank], row[Songs.url]) }
+                .map { parseSong(it) }
                 .toList()
     }
 
+    override fun getReviewedSongs(userId: Int): List<ReviewedSong> = db.transaction {
+        with(Reviews) {
+            from(this)
+                    .where(this.userId eq userId)
+                    .rightJoin(Songs, (Songs.id eq songId))
+                    .execute()
+                    .map { ReviewedSong(parseSong(it), it[value]) }
+                    .toList()
+        }
+    }
 
     override fun createUser(user: User): Int = db.transaction {
         insertInto(Users).values {
