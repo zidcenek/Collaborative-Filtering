@@ -60,7 +60,7 @@ fun Route.reviews(storage: IDatabaseInteractor) {
         put<ReviewLoc> {
             val user = getLoggedUserOrRespondForbidden(storage) ?: return@put
             val newReview = call.receiveOrNull<Review>()
-            if (newReview == null || newReview.songId == 0) {
+            if (newReview == null) {
                 call.respond(HttpStatusCode.BadRequest)
                 return@put
             }
