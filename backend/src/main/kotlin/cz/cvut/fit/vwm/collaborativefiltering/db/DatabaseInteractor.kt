@@ -196,14 +196,10 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
-        // TODO avg -> weighted avg (weight in recommendations)
-        // TODO check the constants
-
         val numberOfRecommendedSongs = 10 // how many songs to recommend
         val spearmenCoeficientLimit = 0 // the limit spearman coeficient
         val numberOfClosestUseres = 5 // how many best matching users will be taken
         val weightLimit = 2// minimal weight the song has to have to be considered recommendable
-        //deleteFrom(Recommendations).execute()
 
         val recommendationForUser = with(Reviews) {
             with(CorrelationCoefficients){
@@ -217,7 +213,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                         SELECT BEST_SONGS_FOR_USER.u_id_1,
                                BEST_SONGS_FOR_USER.song_id,
                                0 AS viewed,
-                               BEST_SONGS_FOR_USER.avg
+                               BEST_SONGS_FOR_USER.avg as avg
                         FROM   (SELECT NOT_LISTENED.song_id        AS song_id,
                                        NOT_LISTENED.user_id_1      AS u_id_1,
                                        Avg(NOT_LISTENED.value)     AS avg,
@@ -249,11 +245,9 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                        NOT_LISTENED
                                 GROUP  BY NOT_LISTENED.user_id_1,
                                           NOT_LISTENED.song_id
-                                HAVING avg >= $weightLimit
                                 ORDER  BY avg DESC,
                                           cnt DESC) BEST_SONGS_FOR_USER
-                        WHERE  BEST_SONGS_FOR_USER.song_rank <= $numberOfRecommendedSongs
-                        ON DUPLICATE KEY UPDATE viewed = viewed + 1
+                        ON DUPLICATE KEY UPDATE viewed = viewed + 1, weight = avg
                     """
                 }
             }
