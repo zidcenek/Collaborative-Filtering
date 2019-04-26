@@ -2,10 +2,18 @@ package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
+import io.ktor.application.ApplicationCall
+import io.ktor.application.feature
+import io.ktor.locations.KtorExperimentalLocationsAPI
+import io.ktor.locations.Locations
+import io.ktor.request.host
+import io.ktor.request.port
+import io.ktor.response.respondRedirect
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.hex
 import java.net.URL
 import java.net.UnknownHostException
+import java.util.regex.Pattern
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -43,4 +51,26 @@ fun fillDbWithMockData(storage: DatabaseInteractor) {
         MockDataJsonParser.praseReview("mock/reviewUser6.json").take(5).forEach { storage.createReview(it) }
         MockDataJsonParser.praseReview("mock/reviewUser7.json").take(5).forEach { storage.createReview(it) }
     }
+}
+
+// source: https://gist.github.com/ironic-name/f8e8479c76e80d470cacd91001e7b45b
+fun isEmailValid(email: String): Boolean {
+    return Pattern.compile(
+            "^(([\\w-]+\\.)+[\\w-]+|([a-zA-Z]|[\\w-]{2,}))@"
+                    + "((([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\\.([0-1]?"
+                    + "[0-9]{1,2}|25[0-5]|2[0-4][0-9])\\."
+                    + "([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\\.([0-1]?"
+                    + "[0-9]{1,2}|25[0-5]|2[0-4][0-9]))|"
+                    + "([a-zA-Z]+[\\w-]+\\.)+[a-zA-Z]{2,4})$"
+    ).matcher(email).matches()
+}
+
+
+@KtorExperimentalLocationsAPI
+suspend fun ApplicationCall.redirect(location: Any) {
+    val host = request.host()
+    val portSpec = request.port().let { if (it == 80) "" else ":$it" }
+    val address = host + portSpec
+
+    respondRedirect("http://$address${application.feature(Locations).href(location)}")
 }

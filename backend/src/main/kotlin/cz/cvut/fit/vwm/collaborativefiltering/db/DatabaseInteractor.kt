@@ -80,6 +80,18 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         from(Users).select(Users.id.count()).execute().single()[0]
     }
 
+    override fun getUserByEmail(email: String, hash: String?): User? = db.transaction {
+        from(Users).where { Users.email eq email }.execute()
+                .mapNotNull {
+                    if (hash == null || it[Users.password] == hash) {
+                        User(it[Users.id], it[Users.name], it[Users.surname], it[Users.email], it[Users.password])
+                    } else {
+                        null
+                    }
+                }
+                .singleOrNull()
+    }
+
     override fun close() {
     }
 
