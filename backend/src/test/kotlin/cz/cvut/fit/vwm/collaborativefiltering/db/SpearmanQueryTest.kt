@@ -79,7 +79,7 @@ class SpearmanQueryTest {
 
         val sc3 = storage.getSpearmanCoefficients()
         Assert.assertEquals(true, sc3.isSpearmanRangeValid())
-        Assert.assertEquals(1, sc3.size)
+        Assert.assertEquals(2, sc3.size)  // now there are two records for every pair
     }
 
     @Test
