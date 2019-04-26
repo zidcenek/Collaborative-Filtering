@@ -1,16 +1,22 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Session
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
+import cz.cvut.fit.vwm.collaborativefiltering.db.IDatabaseInteractor
 import io.ktor.application.ApplicationCall
+import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
 import io.ktor.request.host
 import io.ktor.request.port
 import io.ktor.response.respondRedirect
+import io.ktor.sessions.sessions
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.hex
+import io.ktor.util.pipeline.PipelineContext
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.regex.Pattern
@@ -74,3 +80,8 @@ suspend fun ApplicationCall.redirect(location: Any) {
 
     respondRedirect("http://$address${application.feature(Locations).href(location)}")
 }
+
+fun PipelineContext<Unit, ApplicationCall>.getLoggedUser(storage: IDatabaseInteractor): User? =
+        (call.sessions.get(SESSION_USER_NAME) as? Session)?.let {
+            storage.getUserByEmail(it.userEmail)
+        }
