@@ -52,12 +52,12 @@ class SpearmanQueryTest {
     private fun insertRandomReviews() {
         removeAllReviews()
         val r = Random()
-        ur1.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur2.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur3.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur4.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur5.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
-        ur6.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it) }
+        ur1.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 1) }
+        ur2.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 2) }
+        ur3.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 3) }
+        ur4.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 4) }
+        ur5.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 5) }
+        ur6.shuffled().take(r.nextInt(100)).forEach { storage.createReview(it, 6) }
     }
 
 
@@ -66,8 +66,8 @@ class SpearmanQueryTest {
 
     private fun testSameUsers(revCountUser1: Int, revCountUser2: Int = revCountUser1) {
         removeAllReviews()
-        ur1.take(revCountUser1).forEach { storage.createReview(it) }
-        ur6.take(revCountUser2).forEach { storage.createReview(it) }
+        ur1.take(revCountUser1).forEach { storage.createReview(it, 1) }
+        ur6.take(revCountUser2).forEach { storage.createReview(it, 6) }
         storage.updateSpearmanCoefficients()
 
         val sc1 = storage.getSpearmanCoefficient(1, 6)

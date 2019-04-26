@@ -111,21 +111,58 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     override fun close() {
     }
 
-    override fun createReview(review: Review): Int = db.transaction {
+    override fun getReview(reviewId: Int): Review? = db.transaction {
+        from(Reviews)
+                .select(Reviews)
+                .where(Reviews.id eq reviewId)
+                .execute()
+                .map { row -> Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value]) }
+                .singleOrNull()
+    }
+
+    override fun updateReview(review: Review): Unit = db.transaction {
+        executeStatement(with(Reviews) {
+            """
+                UPDATE $tableName
+                SET ${value.colName} = ${review.value}
+                WHERE ${id.colName} = ${review.id}
+            """
+        })
+    }
+
+    override fun deleteReview(reviewId: Int) = db.transaction {
+        deleteFrom(Reviews)
+                .where(Reviews.id eq reviewId)
+                .execute()
+    }
+
+    override fun createReview(review: Review, userId: Int): Int = db.transaction {
         insertInto(Reviews).values {
-            it[userId] = review.userId
+            it[this.userId] = userId
             it[songId] = review.songId
             it[value] = review.value
         }.fetch(Reviews.id).execute()
     }
 
-    override fun getReviews(): List<Review> = db.transaction {
+    override fun getUserReviews(): List<Review> = db.transaction {
         from(Reviews)
                 .select(Reviews)
                 .execute()
-                .map { row -> Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value]) }
+                .map { parseReview(it) }
                 .toList()
     }
+
+    override fun getUserReviews(userId: Int): List<Review> = db.transaction {
+        from(Reviews)
+                .select(Reviews)
+                .where(Reviews.userId eq userId)
+                .execute()
+                .map { parseReview(it) }
+                .toList()
+    }
+
+    private fun parseReview(row: ResultRow) =
+            Review(row[Reviews.id], row[Reviews.userId], row[Reviews.songId], row[Reviews.value])
 
     override fun getReviewsCount(): Int = db.transaction {
         from(Reviews).select(Reviews.id.count()).execute().single()[0]

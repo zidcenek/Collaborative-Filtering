@@ -43,13 +43,13 @@ fun fillDbWithMockData(storage: DatabaseInteractor) {
         MockDataJsonParser.parseUsers("mock/users.json").take(7).forEach { storage.createUser(it) }
     }
     if (storage.getReviewsCount() == 0) {
-        MockDataJsonParser.praseReview("mock/reviewUser1.json").take(1).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser2.json").take(2).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser3.json").take(3).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser4.json").take(4).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser5.json").take(5).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser6.json").take(5).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser7.json").take(5).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser1.json").take(1).forEach { storage.createReview(it, 1) }
+        MockDataJsonParser.praseReview("mock/reviewUser2.json").take(2).forEach { storage.createReview(it, 2) }
+        MockDataJsonParser.praseReview("mock/reviewUser3.json").take(3).forEach { storage.createReview(it, 3) }
+        MockDataJsonParser.praseReview("mock/reviewUser4.json").take(4).forEach { storage.createReview(it, 4) }
+        MockDataJsonParser.praseReview("mock/reviewUser5.json").take(5).forEach { storage.createReview(it, 5) }
+        MockDataJsonParser.praseReview("mock/reviewUser6.json").take(5).forEach { storage.createReview(it, 6) }
+        MockDataJsonParser.praseReview("mock/reviewUser7.json").take(5).forEach { storage.createReview(it, 7) }
     }
 }
 
