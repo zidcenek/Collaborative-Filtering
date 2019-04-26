@@ -4,6 +4,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Recommendation
 import java.io.Closeable
 
 interface IDatabaseInteractor : Closeable {
@@ -24,6 +25,8 @@ interface IDatabaseInteractor : Closeable {
     fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient
     fun getSpearmanCoefficients(userId: Int): List<CorrelationCoeficient>
     fun getSpearmanCoefficients(): List<CorrelationCoeficient>
+
+    fun incrementSongsViewed(recommendations: List<Recommendation>)
 
     fun updateRecommendations()
 

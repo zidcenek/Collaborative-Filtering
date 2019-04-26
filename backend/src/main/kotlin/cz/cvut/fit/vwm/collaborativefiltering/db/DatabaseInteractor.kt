@@ -5,6 +5,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Recommendation
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
 import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
 import org.jetbrains.squash.connection.DatabaseConnection
@@ -108,6 +109,21 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     override fun getReviewsCount(): Int = db.transaction {
         from(Reviews).select(Reviews.id.count()).execute().single()[0]
     }
+
+    override fun incrementSongsViewed(recommendations: List<Recommendation>): Unit = db.transaction {
+        recommendations.forEach(){
+            val updateViewedStatement = with(Recommendations) {
+                """
+                    UPDATE recommendations
+                    SET viewed = viewed + 1
+                    WHERE user_id = ${it.userId}
+                    AND song_id = ${it.songId}
+                """
+            }
+            executeStatement(updateViewedStatement)
+        }
+    }
+
 
     override fun updateSpearmanCoefficients(): Unit = db.transaction {
         val distance = "distance"
