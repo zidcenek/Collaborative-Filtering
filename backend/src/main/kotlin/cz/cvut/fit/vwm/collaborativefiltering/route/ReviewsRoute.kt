@@ -44,7 +44,7 @@ fun Route.reviews(storage: IDatabaseInteractor) {
             val user = getLoggedUserOrRespondForbidden(storage) ?: return@post
 
             val review = call.receive<Review>()
-            if (review.userId == 0 || review.songId == 0) {
+            if (review.songId == 0) {
                 call.respond(HttpStatusCode.BadRequest)
                 return@post
             }
@@ -60,7 +60,7 @@ fun Route.reviews(storage: IDatabaseInteractor) {
         put<ReviewLoc> {
             val user = getLoggedUserOrRespondForbidden(storage) ?: return@put
             val newReview = call.receiveOrNull<Review>()
-            if (newReview == null || newReview.userId == 0 || newReview.songId == 0) {
+            if (newReview == null || newReview.songId == 0) {
                 call.respond(HttpStatusCode.BadRequest)
                 return@put
             }
