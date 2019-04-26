@@ -51,7 +51,7 @@ fun Application.main() {
         rank(storage)
         recommendations(storage)
         login(storage, ::hash)
-        register(storage, ::hash)
+        register(storage)
         logout()
     }
 }

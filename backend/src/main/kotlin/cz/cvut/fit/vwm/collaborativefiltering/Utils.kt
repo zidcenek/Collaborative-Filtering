@@ -3,7 +3,6 @@ package cz.cvut.fit.vwm.collaborativefiltering
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.Session
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
-import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
 import cz.cvut.fit.vwm.collaborativefiltering.db.IDatabaseInteractor
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -36,7 +35,7 @@ fun hash(password: String): String {
 }
 
 
-fun fillDbWithMockData(storage: DatabaseInteractor) {
+fun fillDbWithMockData(storage: IDatabaseInteractor) {
     if (storage.getSongsCount() == 0) {
         try {
             val url = "https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=rj&api_key=$LAST_FM_API_KEY&format=json&limit=100"
