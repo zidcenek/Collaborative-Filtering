@@ -1,10 +1,7 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
-import cz.cvut.fit.vwm.collaborativefiltering.route.rank
-import cz.cvut.fit.vwm.collaborativefiltering.route.reviews
-import cz.cvut.fit.vwm.collaborativefiltering.route.songs
-import cz.cvut.fit.vwm.collaborativefiltering.route.users
+import cz.cvut.fit.vwm.collaborativefiltering.route.*
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -37,6 +34,7 @@ fun Application.main() {
         users(storage)
         reviews(storage)
         rank(storage)
+        recommendations(storage)
     }
 }
 

@@ -5,3 +5,4 @@ data class Song(val id: Int = 0, val mbid: String?, val artist: String, val titl
 data class Recommendation(val userId: Int, val songId: Int, val viewed: Int, val weight: Double)
 data class Review(val id: Int, val userId: Int, val songId: Int, val value: Int)
 data class CorrelationCoeficient(val id: Int, val userId1: Int, val userId2: Int, val distance: Double, val spearmanCoeficient: Double)
+data class SongRecommendation(val song: Song, val recommendation: Recommendation? = null)

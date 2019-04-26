@@ -1,28 +1,21 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
 import cz.cvut.fit.vwm.collaborativefiltering.*
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Recommendation
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.*
 import cz.cvut.fit.vwm.collaborativefiltering.db.dao.*
 import cz.cvut.fit.vwm.collaborativefiltering.db.driver.MySqlConnection
 import org.jetbrains.squash.connection.DatabaseConnection
 import org.jetbrains.squash.connection.transaction
-import org.jetbrains.squash.expressions.and
-import org.jetbrains.squash.expressions.count
-import org.jetbrains.squash.expressions.eq
-import org.jetbrains.squash.expressions.or
-import org.jetbrains.squash.query.from
-import org.jetbrains.squash.query.select
-import org.jetbrains.squash.query.where
+import org.jetbrains.squash.expressions.*
+import org.jetbrains.squash.query.*
+import org.jetbrains.squash.results.ResultRow
 import org.jetbrains.squash.results.get
 import org.jetbrains.squash.schema.create
 import org.jetbrains.squash.statements.deleteFrom
 import org.jetbrains.squash.statements.fetch
 import org.jetbrains.squash.statements.insertInto
 import org.jetbrains.squash.statements.values
+import java.math.BigDecimal
 
 
 class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
@@ -111,13 +104,13 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun incrementSongsViewed(recommendations: List<Recommendation>): Unit = db.transaction {
-        recommendations.forEach(){
+        recommendations.forEach {
             val updateViewedStatement = with(Recommendations) {
                 """
-                    UPDATE recommendations
-                    SET viewed = viewed + 1
-                    WHERE user_id = ${it.userId}
-                    AND song_id = ${it.songId}
+                    UPDATE $tableName
+                    SET ${viewed.colName} = ${viewed.colName} + 1
+                    WHERE ${userId.colName} = ${it.userId}
+                    AND ${songId.colName} = ${it.songId}
                 """
             }
             executeStatement(updateViewedStatement)
@@ -192,18 +185,16 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(ultimateSpearmanStatement)
-        updateRecommendations();
+        updateRecommendations()
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
-        val numberOfRecommendedSongs = 10 // how many songs to recommend
         val spearmenCoeficientLimit = 0 // the limit spearman coeficient
         val numberOfClosestUseres = 5 // how many best matching users will be taken
-        val weightLimit = 2// minimal weight the song has to have to be considered recommendable
 
         val recommendationForUser = with(Reviews) {
-            with(CorrelationCoefficients){
-                with (Recommendations) {
+            with(CorrelationCoefficients) {
+                with(Recommendations) {
                     """
                         INSERT INTO recommendations
                                     (user_id,
@@ -253,6 +244,51 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             }
         }
         executeStatement(recommendationForUser)
+    }
+
+    override fun getUserSongRecommendationsAndIncrementViewedCount(userId: Int): List<SongRecommendation> = db.transaction {
+        val songs = getUserSongRecommendations(userId)
+        incrementSongsViewed(songs.map {
+            Recommendation(userId, it.song.id, 0, 0.0)
+        })
+        songs
+    }
+
+    override fun getUserSongRecommendations(userId: Int): List<SongRecommendation> = db.transaction {
+        val recommendedCount = 5L
+        val weightLimit = BigDecimal(2.5)
+        val viewedLimit = 5
+        val songs = with(Recommendations) {
+            from(this)
+                    .where { ((this.userId eq userId) and (weight.gteq(weightLimit)) and (viewed lteq viewedLimit)) }
+                    .innerJoin(Songs, (songId eq Songs.id))
+                    .orderByDescending(weight)
+                    .orderBy(viewed)
+                    .limit(recommendedCount)
+                    .execute()
+                    .mapNotNull {
+                        SongRecommendation(parseSong(it), parseRecommendation(it))
+                    }
+                    .toList()
+        }
+        if (songs.isNotEmpty()) songs
+        else with(Songs) {
+            from(this)
+                    .orderBy(lastFmRank)
+                    .limit(recommendedCount)
+                    .execute()
+                    .mapNotNull { SongRecommendation(parseSong(it)) }
+                    .toList()
+        }
+    }
+
+    private fun parseRecommendation(row: ResultRow): Recommendation = with(Recommendations) {
+        Recommendation(row[songId], row[userId], row[viewed], row[weight].toDouble())
+    }
+
+
+    private fun parseSong(row: ResultRow) = with(Songs) {
+        Song(row[id], row[mbid], row[artist], row[title], row[lastFmRank], row[url])
     }
 
     override fun getSpearmanCoefficient(uid1: Int, uid2: Int): CorrelationCoeficient = db.transaction {

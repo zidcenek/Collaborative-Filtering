@@ -18,3 +18,7 @@ class ReviewsLoc
 @KtorExperimentalLocationsAPI
 @Location("/rank")
 class RankLoc
+
+@KtorExperimentalLocationsAPI
+@Location("/recommendations/{userId}")
+data class RecommendationsLoc(val userId: Int)

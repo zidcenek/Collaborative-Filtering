@@ -1,10 +1,6 @@
 package cz.cvut.fit.vwm.collaborativefiltering.db
 
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.CorrelationCoeficient
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Song
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
-import cz.cvut.fit.vwm.collaborativefiltering.data.model.Recommendation
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.*
 import java.io.Closeable
 
 interface IDatabaseInteractor : Closeable {
@@ -29,5 +25,7 @@ interface IDatabaseInteractor : Closeable {
     fun incrementSongsViewed(recommendations: List<Recommendation>)
 
     fun updateRecommendations()
+    fun getUserSongRecommendations(userId: Int): List<SongRecommendation>
+    fun getUserSongRecommendationsAndIncrementViewedCount(userId: Int): List<SongRecommendation>
 
 }
