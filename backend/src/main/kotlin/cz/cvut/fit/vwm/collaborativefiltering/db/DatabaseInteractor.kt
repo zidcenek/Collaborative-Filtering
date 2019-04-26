@@ -63,10 +63,10 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         val map = db.transaction {
             with(Reviews) {
                 from(this)
-                        .select(id, value)
+                        .select(songId, value)
                         .where(this.userId eq userId)
                         .execute()
-                        .map { Pair(it[id], it[value]) }
+                        .map { Pair(it[songId], it[value]) }
                         .toMap()
             }
         }
