@@ -4,7 +4,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.data.model.Review
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.ReviewResponse
 import cz.cvut.fit.vwm.collaborativefiltering.data.model.ReviewsResponse
 import cz.cvut.fit.vwm.collaborativefiltering.db.IDatabaseInteractor
-import cz.cvut.fit.vwm.collaborativefiltering.getLoggedUser
+import cz.cvut.fit.vwm.collaborativefiltering.getLoggedUserOrRespondForbidden
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.ContentType
@@ -20,99 +20,80 @@ import io.ktor.util.pipeline.PipelineContext
 @KtorExperimentalLocationsAPI
 fun Route.reviews(storage: IDatabaseInteractor) {
     get<ReviewsLoc> {
-        val user = getLoggedUser(storage)
-        if (user == null) {
-            call.respond(HttpStatusCode.Forbidden)
-            return@get
-        }
-
+        val user = getLoggedUserOrRespondForbidden(storage) ?: return@get
         val reviews = storage.getUserReviews(user.id)
         call.respond(ReviewsResponse(reviews))
     }
     get<ReviewLoc> {
         println("review loc get")
-        val user = getLoggedUser(storage)
-        if (user == null) {
+        val user = getLoggedUserOrRespondForbidden(storage) ?: return@get
+        val dbReview = getReviewOrRespondError(storage) ?: return@get
+        if (dbReview.userId != user.id) { // logged user trying to read someone else's rating
             call.respond(HttpStatusCode.Forbidden)
-        } else {
-            val dbReview = getReviewOrRespondError(storage) ?: return@get
-            if (dbReview.userId != user.id) { // logged user trying to read someone else's rating
-                call.respond(HttpStatusCode.Forbidden)
-                return@get
-            }
+            return@get
+        }
 
-            try {
-                call.respond(ReviewResponse(dbReview))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError)
-            }
+        try {
+            call.respond(ReviewResponse(dbReview))
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError)
         }
     }
     contentType(ContentType.Application.Json) {
         post<AddReviewLoc> {
-            val user = getLoggedUser(storage)
-            if (user == null) {
-                call.respond(HttpStatusCode.Forbidden)
-            } else {
-                val review = call.receive<Review>()
-                if (review.userId == 0 || review.songId == 0) {
-                    call.respond(HttpStatusCode.BadRequest)
-                    return@post
-                }
-                try {
-                    val id = storage.createReview(review, user.id)
-                    val reviewDb = storage.getReview(id)!!
-                    call.respond(ReviewResponse(reviewDb))
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.Conflict)
-                }
+            val user = getLoggedUserOrRespondForbidden(storage) ?: return@post
+
+            val review = call.receive<Review>()
+            if (review.userId == 0 || review.songId == 0) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
             }
+            try {
+                val id = storage.createReview(review, user.id)
+                val reviewDb = storage.getReview(id)!!
+                call.respond(ReviewResponse(reviewDb))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.Conflict)
+            }
+
         }
         put<ReviewLoc> {
-            val user = getLoggedUser(storage)
-            if (user == null) {
-                call.respond(HttpStatusCode.Forbidden)
-            } else {
-                val newReview = call.receiveOrNull<Review>()
-                if (newReview == null || newReview.userId == 0 || newReview.songId == 0) {
-                    call.respond(HttpStatusCode.BadRequest)
-                    return@put
-                }
+            val user = getLoggedUserOrRespondForbidden(storage) ?: return@put
+            val newReview = call.receiveOrNull<Review>()
+            if (newReview == null || newReview.userId == 0 || newReview.songId == 0) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@put
+            }
 
-                val dbReview = getReviewOrRespondError(storage) ?: return@put
-                if (dbReview.userId != user.id) { // logged user trying to update someone else's rating
-                    call.respond(HttpStatusCode.Forbidden)
-                    return@put
-                }
-                println(newReview)
-                try {
-                    dbReview.value = newReview.value
-                    storage.updateReview(dbReview)
-                    call.respond(ReviewResponse(dbReview))
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.NotModified)
-                }
+            val dbReview = getReviewOrRespondError(storage) ?: return@put
+            if (dbReview.userId != user.id) { // logged user trying to update someone else's rating
+                call.respond(HttpStatusCode.Forbidden)
+                return@put
+            }
+            println(newReview)
+            try {
+                dbReview.value = newReview.value
+                storage.updateReview(dbReview)
+                call.respond(ReviewResponse(dbReview))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.NotModified)
             }
         }
     }
     delete<ReviewLoc> {
-        val user = getLoggedUser(storage)
-        if (user == null) {
+        val user = getLoggedUserOrRespondForbidden(storage) ?: return@delete
+        val dbReview = getReviewOrRespondError(storage) ?: return@delete
+
+        if (dbReview.userId != user.id) { // logged user trying to delete someone else's rating
             call.respond(HttpStatusCode.Forbidden)
-        } else {
-            val dbReview = getReviewOrRespondError(storage) ?: return@delete
+            return@delete
+        }
 
-            if (dbReview.userId != user.id) { // logged user trying to delete someone else's rating
-                call.respond(HttpStatusCode.Forbidden)
-                return@delete
-            }
-
-            try {
-                storage.deleteReview(dbReview.id)
-                call.respond(HttpStatusCode.OK)
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.NotModified)
-            }
+        try {
+            storage.deleteReview(dbReview.id)
+            call.respond(HttpStatusCode.OK)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.NotModified)
         }
     }
 }

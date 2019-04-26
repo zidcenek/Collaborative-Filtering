@@ -7,10 +7,12 @@ import cz.cvut.fit.vwm.collaborativefiltering.db.IDatabaseInteractor
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.feature
+import io.ktor.http.HttpStatusCode
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
 import io.ktor.request.host
 import io.ktor.request.port
+import io.ktor.response.respond
 import io.ktor.response.respondRedirect
 import io.ktor.sessions.sessions
 import io.ktor.util.KtorExperimentalAPI
@@ -84,3 +86,13 @@ fun PipelineContext<Unit, ApplicationCall>.getLoggedUser(storage: IDatabaseInter
         (call.sessions.get(SESSION_USER_NAME) as? Session)?.let {
             storage.getUserByEmail(it.userEmail)
         }
+
+suspend fun PipelineContext<Unit, ApplicationCall>.getLoggedUserOrRespondForbidden(storage: IDatabaseInteractor): User? {
+    val user = getLoggedUser(storage)
+    return if (user == null) {
+        call.respond(HttpStatusCode.Forbidden)
+        null
+    } else {
+        user
+    }
+}
