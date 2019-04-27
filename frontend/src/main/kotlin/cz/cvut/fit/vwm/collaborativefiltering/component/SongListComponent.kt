@@ -1,19 +1,14 @@
 package cz.cvut.fit.vwm.collaborativefiltering.component
 
+import cz.cvut.fit.vwm.collaborativefiltering.async
 import cz.cvut.fit.vwm.collaborativefiltering.launch
-import cz.cvut.fit.vwm.collaborativefiltering.model.Song
 import cz.cvut.fit.vwm.collaborativefiltering.model.ReviewedSong
-import cz.cvut.fit.vwm.collaborativefiltering.request.SongRpc
 import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewRpc
-import cz.cvut.fit.vwm.collaborativefiltering.request.UserRpc
 import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewedSongRpc
-import cz.cvut.fit.vwm.collaborativefiltering.model.Review
-import react.*
-import react.dom.*
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLSelectElement
-import org.w3c.dom.events.Event
-import cz.cvut.fit.vwm.collaborativefiltering.async
+import react.*
+import react.dom.*
 
 
 fun RBuilder.songListComponent(handler: RHandler<SongListComponent.Props> = {}) = child(SongListComponent::class, handler)
@@ -37,14 +32,6 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
         }
     }
 
-    private fun getNameAttribute(reviewedSong: ReviewedSong): String {
-        val str = reviewedSong.song.id.toString()
-        if (reviewedSong.review == null)
-            return str
-        else
-            return str + "|" + reviewedSong.review.id.toString()
-    }
-
     private fun RBuilder.song(reviewedSong: ReviewedSong) {
         h2 {
             +"#${reviewedSong.song.lastFmRank} "
@@ -56,94 +43,62 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
                 attrs.target = "_blank"
             }
             select {
-                option {
-                    attrs.selected = true
-                    attrs.value = "0"
-                    +"Review!"
+                (0..5).forEach {
+                    option {
+                        attrs.selected = reviewedSong.review?.value == it
+                        attrs.value = it.toString()
+                        +(if (it == 0) "Review!" else it).toString()
+                    }
                 }
-                option {
-                    attrs.selected = (reviewedSong.review != null && reviewedSong.review.value == 1)
-                    attrs.value = "1"
-                    +"1"
-                }
-                option {
-                    attrs.selected = (reviewedSong.review != null && reviewedSong.review.value == 2)
-                    attrs.value = "2"
-                    +"2"
-                }
-                option {
-                    attrs.selected = (reviewedSong.review != null && reviewedSong.review.value == 3)
-                    attrs.value = "3"
-                    +"3"
-                }
-                option {
-                    attrs.selected = (reviewedSong.review != null && reviewedSong.review.value == 4)
-                    attrs.value = "4"
-                    +"4"
-                }
-                option {
-                    attrs.selected = (reviewedSong.review != null && reviewedSong.review.value == 5)
-                    attrs.value = "5"
-                    +"5"
-                }
-                attrs.name = getNameAttribute(reviewedSong)
+                attrs.name = reviewedSong.song.id.toString()
                 attrs.onChangeFunction = {
-                    getNameAttribute(reviewedSong)
                     val target = it.target as HTMLSelectElement
-                    val songReviewId = target.getAttribute("name")
-                    val rating = target.value
-                    doReview(songReviewId, rating)
+                    val songId = target.name.toIntOrNull()
+                    val rating = target.value.toIntOrNull()
+                    if (songId != null && rating != null) {
+                        doReview(songId, rating)
+                    }
                 }
             }
         }
     }
 
-    private fun doReview(songReviewId: String?, rating: String){
-        val output = songReviewId?.split("|");
-        if (output == null)
-            return
-        var songId = 0;
-        var ratingValue = 0;
-        try {
-            songId = output.get(0).toInt()
-            ratingValue = rating.toInt()
-
-        } catch (e: NumberFormatException) {
-            console.log(e)
-        }
+    private fun doReview(songId: Int, rating: Int) {
+        val reviewedSong = state.songs?.find { it.song.id == songId } ?: return
         async {
-            if (output.size == 1) {
-                val rev = ReviewRpc.create(songId, ratingValue)
-                var list = state.songs
-                if ( list != null ){
-                    val newList = list.map{
-                        if ( it.song.id == rev.songId )
+            val newList: List<ReviewedSong>? = when {
+                reviewedSong.review == null -> {    // not rated yet
+                    val rev = ReviewRpc.create(songId, rating)
+                    state.songs?.map {
+                        if (it.song.id == rev.songId)
                             ReviewedSong(it.song, rev)
                         else
                             it
                     }
-                    setState {
-                        songs = newList
-                    }
                 }
-            }
-            if ( output.size == 2 && ratingValue == 0) {
-                var list = state.songs
-                if ( list != null ){
-                    val newList = list.map{
-                        if ( it.review != null && it.review.id == output.get(1).toInt() )
+                rating == 0 -> {    // delete review
+                    ReviewRpc.delete(reviewedSong.review.id)
+                    state.songs?.map {
+                        if (it.song.id == songId)
                             ReviewedSong(it.song, null)
                         else
                             it
                     }
-                    setState {
-                        songs = newList
-                    }
                 }
-                ReviewRpc.delete(output.get(1).toInt())
+                rating != 0 -> {    // update rating
+                    ReviewRpc.update(reviewedSong.review.id, rating)
+                    reviewedSong.review.value = rating // keep state consistent
+                    state.songs
+                }
+                else -> {
+                    state.songs
+                }
             }
-            if ( output.size == 2 && ratingValue != 0)
-                ReviewRpc.update(output.get(1).toInt(), ratingValue)
+
+            setState {
+                songs = newList
+            }
+
         }.catch { err ->
             updateFailed(err)
         }
