@@ -12,7 +12,7 @@ import react.*
 import react.dom.*
 
 
-fun RBuilder.songListComponent(handler: RHandler<SongListComponent.Props> = {}) = child(SongListComponent::class, handler)
+fun RBuilder.songListComponent(handler: RHandler<SongListComponent.Props>) = child(SongListComponent::class, handler)
 
 class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.State>() {
 
@@ -41,7 +41,8 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
                 val reviewedSongsList = ReviewedSongRpc.getList()
                 setState {
                     songs = reviewedSongsList
-                }           }
+                }
+            }
 
         }
     }
@@ -143,6 +144,6 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
         }
     }
 
-    class Props(var title: String = "List of songs", var recommended: Boolean) : RProps
+    class Props(var title: String = "List of songs", var getReviewedSongs: (suspend () -> List<ReviewedSong>), var recommended: Boolean) : RProps
     class State(var songs: List<ReviewedSong>? = null) : RState
 }

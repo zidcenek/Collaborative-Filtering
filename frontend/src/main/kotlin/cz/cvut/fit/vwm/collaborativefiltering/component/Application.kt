@@ -3,6 +3,7 @@ package cz.cvut.fit.vwm.collaborativefiltering.component
 import cz.cvut.fit.vwm.collaborativefiltering.ReactComponentNoProps
 import cz.cvut.fit.vwm.collaborativefiltering.async
 import cz.cvut.fit.vwm.collaborativefiltering.model.User
+import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewedSongRpc
 import cz.cvut.fit.vwm.collaborativefiltering.request.UserRpc
 import kotlinx.html.js.onClickFunction
 import react.*
@@ -57,12 +58,15 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
 
             div("content pure-u-1 pure-u-md-3-4") {
                 when (state.selected) {
-                    MainView.Songs -> songListComponent() {
-                        attrs.recommended = false
+                    MainView.Songs -> songListComponent {
+                        attrs.getReviewedSongs = {
+                            ReviewedSongRpc.getList()
+                        }
                     }
                     MainView.SongRecommendation -> songListComponent() {
                         attrs.recommended = true
                     }
+
                     MainView.Login -> loginComponent {
                         attrs.userAssigned = { onUserAssigned(it) }
                     }
