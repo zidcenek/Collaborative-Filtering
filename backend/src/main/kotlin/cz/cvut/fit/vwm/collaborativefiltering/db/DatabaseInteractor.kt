@@ -350,13 +350,14 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                 id eq Reviews.songId.alias("song_id")
                         ).where { Reviews.songId.alias("song_id") eq literal(null) }
                         .orderBy(lastFmRank)
-                        .limit(recommendedCount - songs.size) // only need to
+                        .limit(recommendedCount + songs.size) // maximum songs.size items can be the same..
                         .execute()
                         .mapNotNull { SongRecommendation(parseSong(it)) }
                         .toList()
             })
         }
-        songs
+        songs.distinctBy { it.song.id }
+                .take(recommendedCount.toInt())
     }
 
     private fun parseRecommendation(row: ResultRow): Recommendation = with(Recommendations) {
