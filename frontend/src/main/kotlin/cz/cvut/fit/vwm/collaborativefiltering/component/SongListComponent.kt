@@ -153,6 +153,7 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
     private fun updateFailed(err: Throwable) {
         console.log(err)
     }
+
     override fun RBuilder.render() {
         div {
             h1 { +props.title }
