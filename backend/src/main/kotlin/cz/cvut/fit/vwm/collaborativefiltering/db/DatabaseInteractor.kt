@@ -27,6 +27,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
             executeStatement(Users.dropStatement) // TODO testing only
             executeStatement(CorrelationCoefficients.dropStatement)
             executeStatement(Reviews.dropStatement)
+            executeStatement(Recommendations.dropStatement)
             databaseSchema().create(Songs, Reviews, Recommendations, CorrelationCoefficients, Users)
         }
     }
@@ -323,6 +324,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         val recommendedCount = 5L
         val weightLimit = BigDecimal(2.5)
         val viewedLimit = 5
+        val reviews = getReviewedSongs(userId).map { Pair(it.song.id, it.review) }.toMap()
         val songs = with(Recommendations) {
             from(this)
                     .where { ((this.userId eq userId) and (weight.gteq(weightLimit)) and (viewed lteq viewedLimit)) }
@@ -334,17 +336,27 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                     .mapNotNull {
                         SongRecommendation(parseSong(it), parseRecommendation(it))
                     }
-                    .toList()
+                    .filter { reviews[it.song.id] == null }
+                    .toMutableList()
         }
-        if (songs.isNotEmpty()) songs
-        else with(Songs) {
-            from(this)
-                    .orderBy(lastFmRank)
-                    .limit(recommendedCount)
-                    .execute()
-                    .mapNotNull { SongRecommendation(parseSong(it)) }
-                    .toList()
+
+        if (songs.size < 5) {
+            songs.addAll(with(Songs) {
+                from(this)
+                        .leftJoin(
+                                from(Reviews)
+                                        .select(Reviews.songId)
+                                        .where { Reviews.userId eq userId }.alias("r"),
+                                id eq Reviews.songId.alias("song_id")
+                        ).where { Reviews.songId.alias("song_id") eq literal(null) }
+                        .orderBy(lastFmRank)
+                        .limit(recommendedCount - songs.size) // only need to
+                        .execute()
+                        .mapNotNull { SongRecommendation(parseSong(it)) }
+                        .toList()
+            })
         }
+        songs
     }
 
     private fun parseRecommendation(row: ResultRow): Recommendation = with(Recommendations) {
