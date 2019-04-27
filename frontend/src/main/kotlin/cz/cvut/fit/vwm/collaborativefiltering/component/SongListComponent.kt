@@ -26,24 +26,20 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
 
     private fun getSongs() {
         launch {
-            if ( props.recommended == true ) {
+            val list = if (props.recommended) {
                 console.log("Showing SongRecommendations")
                 val recommendedSongsList = SongRecommendationRpc.getList()
-                val recommendations = recommendedSongsList.map{
+                recommendedSongsList.map {
                     ReviewedSong(it.song, null)
                 }
-                val reviewedSongsList = ReviewedSongRpc.getList()
-                console.log(recommendedSongsList)
-                setState {
-                    songs = recommendations
-                }
             } else {
-                val reviewedSongsList = ReviewedSongRpc.getList()
-                setState {
-                    songs = reviewedSongsList
-                }
+                console.log("Showing Songs")
+                ReviewedSongRpc.getList()
             }
-
+            setState {
+                songs = list
+            }
+            console.log(list)
         }
     }
 
@@ -144,6 +140,6 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
         }
     }
 
-    class Props(var title: String = "List of songs", var getReviewedSongs: (suspend () -> List<ReviewedSong>), var recommended: Boolean) : RProps
+    class Props(var title: String = "List of songs", var recommended: Boolean) : RProps
     class State(var songs: List<ReviewedSong>? = null) : RState
 }
