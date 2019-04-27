@@ -4,14 +4,13 @@ import cz.cvut.fit.vwm.collaborativefiltering.async
 import cz.cvut.fit.vwm.collaborativefiltering.launch
 import cz.cvut.fit.vwm.collaborativefiltering.model.ReviewedSong
 import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewRpc
-import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewedSongRpc
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.*
 
 
-fun RBuilder.songListComponent(handler: RHandler<SongListComponent.Props> = {}) = child(SongListComponent::class, handler)
+fun RBuilder.songListComponent(handler: RHandler<SongListComponent.Props>) = child(SongListComponent::class, handler)
 
 class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.State>() {
 
@@ -25,7 +24,7 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
 
     private fun getSongs() {
         launch {
-            val reviewedSongsList = ReviewedSongRpc.getList()
+            val reviewedSongsList = props.getReviewedSongs.invoke()
             setState {
                 songs = reviewedSongsList
             }
@@ -129,6 +128,6 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
         }
     }
 
-    class Props(var title: String = "List of songs") : RProps
+    class Props(var title: String = "List of songs", var getReviewedSongs: (suspend () -> List<ReviewedSong>)) : RProps
     class State(var songs: List<ReviewedSong>? = null) : RState
 }
