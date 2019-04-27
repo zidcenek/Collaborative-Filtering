@@ -21,8 +21,9 @@ object ReviewRpc {
     suspend fun update(reviewId: Int, value: Int): Review =
             putJsonAndParseResult("/reviews/$reviewId", json("value" to value), ::parseReviewResponse)
 
-    suspend fun delete(reviewId: Int): Unit =
-            deleteAndParseResult("/reviews/$reviewId", null) { Unit }
+    suspend fun delete(reviewId: Int) {
+        delete("/reviews/$reviewId", null)
+    }
 
     private fun parseReviewResponse(json: dynamic): Review {
         if (json == null) {
