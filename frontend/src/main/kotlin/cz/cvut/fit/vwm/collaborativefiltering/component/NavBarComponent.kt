@@ -31,6 +31,9 @@ class NavBarComponent : RComponent<NavBarComponent.NavBarHandlerProps, ReactComp
                 navItem("Show songs") {
                     showSongsView()
                 }
+                navItem("Show recommended songs") {
+                    showSongRecommendationView()
+                }
                 navItem("Sign out, ${user.name} ${user.surname}") {
                     logout()
                 }
@@ -47,6 +50,10 @@ class NavBarComponent : RComponent<NavBarComponent.NavBarHandlerProps, ReactComp
 
     private fun showSongsView() {
         props.handler(MainView.Songs)
+    }
+
+    private fun showSongRecommendationView() {
+        props.handler(MainView.SongRecommendation)
     }
 
     private fun register() {

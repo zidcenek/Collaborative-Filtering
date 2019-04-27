@@ -5,6 +5,7 @@ import cz.cvut.fit.vwm.collaborativefiltering.launch
 import cz.cvut.fit.vwm.collaborativefiltering.model.ReviewedSong
 import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewRpc
 import cz.cvut.fit.vwm.collaborativefiltering.request.ReviewedSongRpc
+import cz.cvut.fit.vwm.collaborativefiltering.request.SongRecommendationRpc
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLSelectElement
 import react.*
@@ -25,10 +26,23 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
 
     private fun getSongs() {
         launch {
-            val reviewedSongsList = ReviewedSongRpc.getList()
-            setState {
-                songs = reviewedSongsList
-            }
+            if ( props.recommended == true ) {
+                console.log("Showing SongRecommendations")
+                val recommendedSongsList = SongRecommendationRpc.getList()
+                val recommendations = recommendedSongsList.map{
+                    ReviewedSong(it.song, null)
+                }
+                val reviewedSongsList = ReviewedSongRpc.getList()
+                console.log(recommendedSongsList)
+                setState {
+                    songs = recommendations
+                }
+            } else {
+                val reviewedSongsList = ReviewedSongRpc.getList()
+                setState {
+                    songs = reviewedSongsList
+                }           }
+
         }
     }
 
@@ -129,6 +143,6 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
         }
     }
 
-    class Props(var title: String = "List of songs") : RProps
+    class Props(var title: String = "List of songs", var recommended: Boolean) : RProps
     class State(var songs: List<ReviewedSong>? = null) : RState
 }

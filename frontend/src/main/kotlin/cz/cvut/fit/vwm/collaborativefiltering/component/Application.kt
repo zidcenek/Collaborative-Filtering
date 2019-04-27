@@ -57,7 +57,12 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
 
             div("content pure-u-1 pure-u-md-3-4") {
                 when (state.selected) {
-                    MainView.Songs -> songListComponent()
+                    MainView.Songs -> songListComponent() {
+                        attrs.recommended = false
+                    }
+                    MainView.SongRecommendation -> songListComponent() {
+                        attrs.recommended = true
+                    }
                     MainView.Login -> loginComponent {
                         attrs.userAssigned = { onUserAssigned(it) }
                     }
@@ -113,6 +118,7 @@ enum class MainView {
     Loading,
     Home,
     Songs,
+    SongRecommendation,
     Login,
     Register
 }
