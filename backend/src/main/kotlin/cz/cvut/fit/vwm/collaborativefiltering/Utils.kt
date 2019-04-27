@@ -1,16 +1,23 @@
 package cz.cvut.fit.vwm.collaborativefiltering
 
 import cz.cvut.fit.vwm.collaborativefiltering.data.json.MockDataJsonParser
-import cz.cvut.fit.vwm.collaborativefiltering.db.DatabaseInteractor
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.Session
+import cz.cvut.fit.vwm.collaborativefiltering.data.model.User
+import cz.cvut.fit.vwm.collaborativefiltering.db.IDatabaseInteractor
 import io.ktor.application.ApplicationCall
+import io.ktor.application.call
 import io.ktor.application.feature
+import io.ktor.http.HttpStatusCode
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
 import io.ktor.request.host
 import io.ktor.request.port
+import io.ktor.response.respond
 import io.ktor.response.respondRedirect
+import io.ktor.sessions.sessions
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.hex
+import io.ktor.util.pipeline.PipelineContext
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.regex.Pattern
@@ -30,7 +37,7 @@ fun hash(password: String): String {
 }
 
 
-fun fillDbWithMockData(storage: DatabaseInteractor) {
+fun fillDbWithMockData(storage: IDatabaseInteractor) {
     if (storage.getSongsCount() == 0) {
         try {
             val url = "https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=rj&api_key=$LAST_FM_API_KEY&format=json&limit=100"
@@ -43,13 +50,13 @@ fun fillDbWithMockData(storage: DatabaseInteractor) {
         MockDataJsonParser.parseUsers("mock/users.json").take(7).forEach { storage.createUser(it) }
     }
     if (storage.getReviewsCount() == 0) {
-        MockDataJsonParser.praseReview("mock/reviewUser1.json").take(1).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser2.json").take(2).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser3.json").take(3).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser4.json").take(4).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser5.json").take(5).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser6.json").take(5).forEach { storage.createReview(it) }
-        MockDataJsonParser.praseReview("mock/reviewUser7.json").take(5).forEach { storage.createReview(it) }
+        MockDataJsonParser.praseReview("mock/reviewUser1.json").take(1).forEach { storage.createReview(it, 1) }
+        MockDataJsonParser.praseReview("mock/reviewUser2.json").take(2).forEach { storage.createReview(it, 2) }
+        MockDataJsonParser.praseReview("mock/reviewUser3.json").take(3).forEach { storage.createReview(it, 3) }
+        MockDataJsonParser.praseReview("mock/reviewUser4.json").take(4).forEach { storage.createReview(it, 4) }
+        MockDataJsonParser.praseReview("mock/reviewUser5.json").take(5).forEach { storage.createReview(it, 5) }
+        MockDataJsonParser.praseReview("mock/reviewUser6.json").take(5).forEach { storage.createReview(it, 6) }
+        MockDataJsonParser.praseReview("mock/reviewUser7.json").take(5).forEach { storage.createReview(it, 7) }
     }
 }
 
@@ -73,4 +80,19 @@ suspend fun ApplicationCall.redirect(location: Any) {
     val address = host + portSpec
 
     respondRedirect("http://$address${application.feature(Locations).href(location)}")
+}
+
+fun PipelineContext<Unit, ApplicationCall>.getLoggedUser(storage: IDatabaseInteractor): User? =
+        (call.sessions.get(SESSION_USER_NAME) as? Session)?.let {
+            storage.getUserByEmail(it.userEmail)
+        }
+
+suspend fun PipelineContext<Unit, ApplicationCall>.getLoggedUserOrRespondForbidden(storage: IDatabaseInteractor): User? {
+    val user = getLoggedUser(storage)
+    return if (user == null) {
+        call.respond(HttpStatusCode.Forbidden)
+        null
+    } else {
+        user
+    }
 }

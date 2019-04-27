@@ -16,6 +16,14 @@ class SongsLoc
 class ReviewedSongsLoc
 
 @KtorExperimentalLocationsAPI
+@Location("/reviews/")
+class AddReviewLoc
+
+@KtorExperimentalLocationsAPI
+@Location("/reviews/{reviewId}")
+data class ReviewLoc(val reviewId: Int)
+
+@KtorExperimentalLocationsAPI
 @Location("/reviews")
 class ReviewsLoc
 
@@ -24,8 +32,8 @@ class ReviewsLoc
 class RankLoc
 
 @KtorExperimentalLocationsAPI
-@Location("/recommendations/{userId}")
-data class RecommendationsLoc(val userId: Int)
+@Location("/recommendations")
+class RecommendationsLoc
 
 @KtorExperimentalLocationsAPI
 @Location("/")

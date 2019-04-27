@@ -21,7 +21,7 @@ import io.ktor.sessions.set
 
 
 @KtorExperimentalLocationsAPI
-fun Route.register(db: IDatabaseInteractor, hashFunction: (String) -> String) {
+fun Route.register(db: IDatabaseInteractor) {
     get<RegisterLoc> {
         call.respond(HttpStatusCode.MethodNotAllowed)
     }
