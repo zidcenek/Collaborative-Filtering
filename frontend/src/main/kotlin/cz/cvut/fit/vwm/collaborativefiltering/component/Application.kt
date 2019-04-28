@@ -58,9 +58,11 @@ class Application : RComponent<ReactComponentNoProps, Application.ApplicationPag
                 when (state.selected) {
                     MainView.Songs -> songListComponent {
                         attrs.recommended = false
+                        attrs.key = state.selected.name
                     }
                     MainView.SongRecommendation -> songListComponent {
                         attrs.recommended = true
+                        attrs.key = state.selected.name
                     }
 
                     MainView.Login -> loginComponent {
