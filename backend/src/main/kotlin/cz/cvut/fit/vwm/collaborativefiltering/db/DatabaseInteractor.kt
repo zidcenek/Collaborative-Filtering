@@ -247,7 +247,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                 AND NOT U1.id = U2.id
                             ) RANKING_TABLE
                         GROUP BY $u1Id, $u2Id
-                        HAVING COUNT($u1Id) > $minSame
+                        HAVING COUNT($u1Id) >= $minSame
                 """
             }
         }
