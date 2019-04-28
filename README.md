@@ -7,7 +7,9 @@ Both backend and frontend is written in Kotlin. Backend uses Ktor framework and 
 You need to have java installed on your system. You can get the java from
  [here](https://www.oracle.com/technetwork/java/javase/downloads/index.html).
 
-
+You also need to have MariaDB 10.2 or higher running on port 3306 (using XAMPP, for example) and with database `vwm` 
+accessible for `root` user without password.
+ 
 ### Build & Run
 
 You can build and run the app with the commands below.
