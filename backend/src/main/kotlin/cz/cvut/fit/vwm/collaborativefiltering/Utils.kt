@@ -47,7 +47,7 @@ fun fillDbWithMockData(storage: IDatabaseInteractor) {
         }
     }
     if (storage.getUsersCount() == 0) {
-        MockDataJsonParser.parseUsers("mock/users.json").take(7).forEach { storage.createUser(it) }
+        MockDataJsonParser.parseUsers("mock/users.json").forEach { storage.createUser(it) }
     }
     if (storage.getReviewsCount() == 0) {
         MockDataJsonParser.praseReview("mock/reviewUser1.json").take(1).forEach { storage.createReview(it, 1) }

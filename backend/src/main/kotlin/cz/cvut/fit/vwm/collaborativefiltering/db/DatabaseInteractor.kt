@@ -190,7 +190,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         val u2Id = "user_id_2"
         val myRank1 = "my_rank_1"
         val myRank2 = "my_rank_2"
-        val minSame = "1" // count(uid) in SQL QUERY must be above 1 otherwise division by 0 (1-1)
+        val minSame = "5" // count(uid) in SQL QUERY must be above 1 otherwise division by 0 (1-1)
         // todo - change minSame
         /*
         * 1. makes a cross join of users
@@ -256,7 +256,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
-        val spearmenCoeficientLimit = 2 // the limit spearman coeficient
+        val spearmenCoeficientLimit = 0.5 // the limit spearman coeficient
         val numberOfClosestUseres = 5 // how many best matching users will be taken
 
         val recommendationForUser = with(Reviews) {
@@ -308,6 +308,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                           NOT_LISTENED.song_id
                                 ORDER  BY avg DESC,
                                           cnt DESC) BEST_SONGS_FOR_USER
+                                ON DUPLICATE KEY UPDATE weight = avg
                     """
                 }
             }
