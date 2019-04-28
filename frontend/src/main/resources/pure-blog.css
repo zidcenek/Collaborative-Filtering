@@ -105,6 +105,12 @@ h3 {
     margin-bottom: 0.2em;
 }
 
+.post-subtitle {
+    font-size: 1.5em;
+    color: #222;
+    margin-bottom: 0.2em;
+}
+
 .post-avatar {
     border-radius: 50px;
     float: right;

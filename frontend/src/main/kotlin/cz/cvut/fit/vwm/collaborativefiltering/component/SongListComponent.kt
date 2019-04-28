@@ -44,7 +44,7 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
     }
 
     private fun RBuilder.song(reviewedSong: ReviewedSong) {
-        h2 {
+        p(classes = "post-subtitle") {
             +"#${reviewedSong.song.lastFmRank} "
             a {
                 +reviewedSong.song.title
@@ -54,10 +54,10 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
                 attrs.target = "_blank"
             }
             select {
+                // produces warning (bug) - https://github.com/JetBrains/kotlin-wrappers/issues/92
+                attrs.value = reviewedSong.review?.value?.toString() ?: "0"
                 (0..5).forEach {
                     option {
-                        attrs.selected = reviewedSong.review?.value == it
-                        attrs.value = it.toString()
                         +(if (it == 0) "Review!" else it).toString()
                     }
                 }
@@ -128,9 +128,7 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
                     state.songs?.map { t ->
                         li {
                             key = t.song.id.toString()
-                            p(classes = "post-meta") {
-                                song(t)
-                            }
+                            song(t)
                         }
                     }
                 }
