@@ -191,6 +191,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
         val myRank1 = "my_rank_1"
         val myRank2 = "my_rank_2"
         val minSame = "1" // count(uid) in SQL QUERY must be above 1 otherwise division by 0 (1-1)
+        // todo - change minSame
         /*
         * 1. makes a cross join of users
         * 2. joins reviews on user_id for both user columns
@@ -255,7 +256,7 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
     }
 
     override fun updateRecommendations(): Unit = db.transaction {
-        val spearmenCoeficientLimit = 0 // the limit spearman coeficient
+        val spearmenCoeficientLimit = 2 // the limit spearman coeficient
         val numberOfClosestUseres = 5 // how many best matching users will be taken
 
         val recommendationForUser = with(Reviews) {
@@ -273,7 +274,8 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                BEST_SONGS_FOR_USER.avg as avg
                         FROM   (SELECT NOT_LISTENED.song_id        AS song_id,
                                        NOT_LISTENED.user_id_1      AS u_id_1,
-                                       Avg(NOT_LISTENED.value)     AS avg,
+                                       SUM(NOT_LISTENED.value * NOT_LISTENED.spearman_coef) /
+                                            SUM(NOT_LISTENED.spearman_coef)     AS avg,
                                        Count(NOT_LISTENED.song_id) AS cnt,
                                        Rank()
                                          OVER(
@@ -282,10 +284,12 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                 FROM   (SELECT user_id_1,
                                                user_id_2,
                                                song_id,
+                                               spearman_coef,
                                                value
                                         FROM   (SELECT *
                                                 FROM   (SELECT user_id_1,
                                                                user_id_2,
+                                                               spearman_coef,
                                                                Rank()
                                                                  OVER(
                                                                    partition BY user_id_1
@@ -304,7 +308,6 @@ class DatabaseInteractor(val db: DatabaseConnection = MySqlConnection.create(
                                           NOT_LISTENED.song_id
                                 ORDER  BY avg DESC,
                                           cnt DESC) BEST_SONGS_FOR_USER
-                        ON DUPLICATE KEY UPDATE viewed = viewed + 1, weight = avg
                     """
                 }
             }
