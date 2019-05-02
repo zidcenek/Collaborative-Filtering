@@ -65,8 +65,8 @@ class SongListComponent : RComponent<SongListComponent.Props, SongListComponent.
                 attrs.onChangeFunction = {
                     val target = it.target as HTMLSelectElement
                     val songId = target.name.toIntOrNull()
-                    val rating = target.value.toIntOrNull()
-                    if (songId != null && rating != null) {
+                    val rating = target.selectedIndex
+                    if (songId != null) {
                         doReview(songId, rating)
                     }
                 }
